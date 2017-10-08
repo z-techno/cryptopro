@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Insert title here</title>
+	<script type="text/javascript" src="libs/utils.js"></script>
+	<script type="text/javascript" src="js/CryptoProAdapter.js"></script>
+</head>
+<body>
+	<div id="content"></div>
+	<div id="ProviderName"></div>
+	<div id="ProviderType"></div>
+	<div id="ProviderVersion"></div>
+
+	<script type="text/javascript">
+		var cnt = document.getElementById("content");
+		cnt.innerHTML = "whatever ";
+	  	if (cryptoProAdapter) {
+	  		cnt.innerHTML = cnt.innerHTML + "cryptoProAdapter - загружен ";
+	  	}
+	  	cnt.innerHTML = cnt.innerHTML + (cryptoProAdapter.getErrorMessage() ? cryptoProAdapter.getErrorMessage().toString() : "без ошибок") + " ";
+	  
+	</script>
+</body>
+</html>
