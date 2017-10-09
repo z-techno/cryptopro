@@ -860,7 +860,7 @@ if (!main || !main.utils || !main.utils.createClass) {
 		/**
 		 * Получить список установленных сертификатов.
 		 * 
-		 * @return  Карта: Ключ - ид сертификата, Значение - описанием сертификата
+		 * @return  Карта: Ключ - ид сертификата(certSubjectName), Значение - описанием сертификата
 		 */
 		getSigns: function() {
 			if (variable.debug) {
@@ -920,7 +920,7 @@ if (!main || !main.utils || !main.utils.createClass) {
 		 * Подписать строковое представление
 		 * @param signId - ид сертификата
 		 * 
-		 * @return Строка с подписью
+		 * @return Строка с подписью в формате BASE64
 		 */
 		signString: function(signId, text) {
 			if (variable.debug) {
@@ -928,7 +928,44 @@ if (!main || !main.utils || !main.utils.createClass) {
 			}
 			check();
 			
-			return undefined;
+			// Ищем подпись
+			var oStore = cadesplugin.CreateObject("CAdESCOM.Store");
+	        oStore.Open(CAPICOM_CURRENT_USER_STORE, CAPICOM_MY_STORE, CAPICOM_STORE_OPEN_MAXIMUM_ALLOWED);
+	        var oCertificates = oStore.Certificates.Find(CAPICOM_CERTIFICATE_FIND_SUBJECT_NAME, signId);
+	        if (oCertificates.Count == 0) {
+	            alert("Certificate not found: " + certSubjectName);
+	            return;
+	        }
+	        var oCertificate = oCertificates.Item(1);
+			
+	        // Создаем подписанное сообщение
+	        // Создаем объект CAdESCOM.CPSigner
+	        var oSigner = cadesplugin.CreateObject("CAdESCOM.CPSigner");
+            oSigner.Certificate = oCertificate;
+            oSigner.TSAAddress = "http://cryptopro.ru/tsp/";
+
+	        // Создаем объект CAdESCOM.CadesSignedData
+            var oSignedData = cadesplugin.CreateObject("CAdESCOM.CadesSignedData");
+            // Данные будут перекодированы из Base64 в бинарный массив.
+            //oSignedData.ContentEncoding = CADESCOM_BASE64_TO_BINARY;
+            oSignedData.Content = text;
+            
+            // Добавление информации о времени создания подписи
+    		var Attribute = CreateObject("CADESCOM.CPAttribute");
+    		Attribute.Name = CAPICOM_AUTHENTICATED_ATTRIBUTE_SIGNING_TIME;
+    		var oTimeNow = new Date();
+    		Attribute.Value = ConvertDate(oTimeNow);
+    		oSigner.AuthenticatedAttributes2.Add(Attribute);
+
+	        // Вычисляем значение подписи, подпись будет перекодирована в BASE64
+            try {
+                var sSignedMessage = oSignedData.SignCades(oSigner, CADESCOM_CADES_X_LONG_TYPE_1, true, CADESCOM_ENCODE_BASE64);
+            } catch (ex) {
+                alert("Failed to create signature. Error: " + cadesplugin.getLastError(ex));
+                return;
+            }
+
+	        return sSignedMessage;
 		},
 		
 		/**
