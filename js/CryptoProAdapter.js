@@ -8,6 +8,7 @@
  * Требования к адаптеру описаны: https://docs.google.com/document/d/1bvKOBX3OdXo0as5R594vnVc_hxJnXVUHPn46TeBJOLs/edit#
  * 
  * @author: Гончаров Никита
+ * @company: Z-Tech
  * @veraion: 1.0
  * @date: 09.10.2017
  */
@@ -750,6 +751,7 @@ if (!main || !main.utils || !main.utils.createClass) {
     
 	//~ Consts -----------------------------------------------------------------------------------------
     I18N_ERROR_LOAD_CADESPLUGIN = "Плагин cadesplugin не доступен";
+    UNDEFAINED = -1;
     
 	//~ Variable -----------------------------------------------------------------------------------------
     variable = {
@@ -825,7 +827,125 @@ if (!main || !main.utils || !main.utils.createClass) {
 				console.log("CryptoProAdapter: Вызыван getErrorMessage");
 			}
 			return variable.error;
-		}
+		},
+		
+		/**
+		 * Получить версию плагина.
+		 * 
+		 * @return Объект с данными о плагине
+		 */
+		getVersion: function() {
+			if (variable.debug) {
+				console.log("CryptoProAdapter: Вызыван getVersion");
+			}
+			var version = {};
+			version.adapter = "1.0";
+			if (cadesplugin) {
+				version.cadesplugin = cadesplugin.JSModuleVersion;
+			} else {
+				version.cadesplugin = "Плагин не сломался. Что-то пошло не так с CryptoProAdapter.js";
+				return version;
+			}
+			
+			try {
+				check();
+			} catch (e) {
+				version.csp = UNDEFAINED;
+				version.extendbrower = UNDEFAINED;
+			}
+			
+			return version;
+		},
+		
+		/**
+		 * Получить список установленных сертификатов.
+		 * 
+		 * @return  Карта: Ключ - ид сертификата, Значение - описанием сертификата
+		 */
+		getSigns: function() {
+			if (variable.debug) {
+				console.log("CryptoProAdapter: Вызыван getSigns");
+			}
+			check();
+			
+			var oStore = cadesplugin.CreateObject("CAdESCOM.Store");
+			this.oStore.Open(cadesplugin.CAPICOM_CURRENT_USER_STORE, cadesplugin.CAPICOM_MY_STORE, cadesplugin.CAPICOM_STORE_OPEN_MAXIMUM_ALLOWED);
+			var certCnt = this.oStore.Certificates.Count;
+			
+			var certsList = [];
+			var cert;
+			for (var i = 1; i <= certCnt; i++) {
+				try {
+		            cert = this.oStore.Certificates.Item(i);
+		            if (variable.debug) {
+						console.log("CryptoProAdapter: Вызыван getSigns: cert " + i);
+						console.log(cert);
+					}
+		            certsList.push({id: "1", name: "2"});
+		        } catch (ex) {
+		        	var err = "Ошибка при получении сертификата: ";
+		        	try {
+		        		err += cadesplugin.getLastError(ex);
+					} catch (e) {
+						err += "" + ex + "(Не удалось поулчить детали: " + e + ")"
+					}
+		        	certsList.push({
+		        		id: UNDEFAINED, 
+		        		name: err
+		        	});
+		        }
+			}
+			this.oStore.Close();
+			
+			return certsList;
+		},
+		
+		/**
+		 * Проверка подписи.
+		 * @param signId - ид сертификата
+		 * @param params - 
+		 * 
+		 * @return Список в виде строк с описание ошибок
+		 */
+		validateSign: function(signId, params) {
+			if (variable.debug) {
+				console.log("CryptoProAdapter: Вызыван validateSign");
+			}
+			check();
+			
+			return undefined;
+		},
+		
+		/**
+		 * Подписать строковое представление
+		 * @param signId - ид сертификата
+		 * 
+		 * @return Строка с подписью
+		 */
+		signString: function(signId, text) {
+			if (variable.debug) {
+				console.log("CryptoProAdapter: Вызыван signString");
+			}
+			check();
+			
+			return undefined;
+		},
+		
+		/**
+		 * Подписать бинарные данные
+		 * @param signId - ид сертификата
+		 * 
+		 * @return Строка с подписью
+		 */
+		signData: function(signId, data) {
+			if (variable.debug) {
+				console.log("CryptoProAdapter: Вызыван signData");
+			}
+			check();
+			
+			return undefined;
+		},
+		
     }
     
     // init

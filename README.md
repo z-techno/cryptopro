@@ -1,5 +1,7 @@
 # CryptoProAdapter plugin
-Адаптер для родной библиотеке cadesplugin_api.js, версия от 07.10.2017
+Адаптер для родной КриптоПро библиотеке cadesplugin_api.js, версия от 07.10.2017
 
 ## Как использовать
-<script type="text/javascript" src="cadesplugin_api.js"></script>
+<script type="text/javascript" src="CryptoProAdapter.js"></script>
+
+var version = cryptoProAdapter.getVersion()

@@ -17,8 +17,41 @@
 		cnt.innerHTML = "whatever ";
 	  	if (cryptoProAdapter) {
 	  		cnt.innerHTML = cnt.innerHTML + "cryptoProAdapter - загружен ";
+	  		cnt.innerHTML = cnt.innerHTML + (cryptoProAdapter.getErrorMessage() ? cryptoProAdapter.getErrorMessage().toString() : "без ошибок") + "<br/>";
+	  		
+			try {
+				cnt.innerHTML = cnt.innerHTML + "getVersion: " + JSON.stringify(cryptoProAdapter.getVersion()) + "<br/>";
+			} catch (e) {
+				cnt.innerHTML = cnt.innerHTML + "Ошибка - getVersion: " + e + "<br/>";
+			}
+			
+			try {
+				cryptoProAdapter.getSigns();
+			} catch (e) {
+				cnt.innerHTML = cnt.innerHTML + "Ошибка - getSigns: " + e + "<br/>";
+			}
+	  		
+			try {
+				cryptoProAdapter.validateSign();
+			} catch (e) {
+				cnt.innerHTML = cnt.innerHTML + "Ошибка - validateSign: " + e + "<br/>";
+			}
+			
+			try {
+				cryptoProAdapter.signString();
+			} catch (e) {
+				cnt.innerHTML = cnt.innerHTML + "Ошибка - signString: " + e + "<br/>";
+			}
+			
+			try {
+				cryptoProAdapter.signData();
+			} catch (e) {
+				cnt.innerHTML = cnt.innerHTML + "Ошибка - signData: " + e + "<br/>";
+			}
+			
+	  	} else {
+	  		cnt.innerHTML = cnt.innerHTML + "cryptoProAdapter - Ошибка загрузки ";
 	  	}
-	  	cnt.innerHTML = cnt.innerHTML + (cryptoProAdapter.getErrorMessage() ? cryptoProAdapter.getErrorMessage().toString() : "без ошибок") + " ";
 	  
 	</script>
 </body>
