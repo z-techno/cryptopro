@@ -751,11 +751,12 @@ if (!main || !main.utils || !main.utils.createClass) {
     
 	//~ Consts -----------------------------------------------------------------------------------------
     I18N_ERROR_LOAD_CADESPLUGIN = "Плагин cadesplugin не доступен";
-    UNDEFAINED = -1;
+    UNDEFINED = -1;
     
 	//~ Variable -----------------------------------------------------------------------------------------
     variable = {
 		cadespluginState: 0,				// Состояние загрузки cadesplugin
+		certs: [],							// Список сертификатов
 		debug: true,						// Режим расширенного логирования
 		error: undefined 					// Последняя ошибка
 	};
@@ -810,6 +811,27 @@ if (!main || !main.utils || !main.utils.createClass) {
 		
 	};
 	
+	/**
+	 * Обработка ошибки от cadesplugin
+	 */
+	handlerException = function(exception) {
+		
+	};
+	
+	/**
+	 * Загрузить список сертификатов
+	 */
+	loadCerts = function() {
+		
+	};
+	
+	/**
+	 * Создаем подпись данных
+	 */
+	createSign = function(signId, data, isAddTimeStamp, isBinary) {
+		
+	};
+	
 	//~ Public methods --------------------------------------------------------------------------------------
     publicMethod = {
 		/**
@@ -850,8 +872,8 @@ if (!main || !main.utils || !main.utils.createClass) {
 			try {
 				check();
 			} catch (e) {
-				version.csp = UNDEFAINED;
-				version.extendbrower = UNDEFAINED;
+				version.csp = UNDEFINED;
+				version.extendbrower = UNDEFINED;
 			}
 			
 			return version;
@@ -890,7 +912,7 @@ if (!main || !main.utils || !main.utils.createClass) {
 						err += "" + ex + "(Не удалось поулчить детали: " + e + ")"
 					}
 		        	certsList.push({
-		        		id: UNDEFAINED, 
+		        		id: UNDEFINED, 
 		        		name: err
 		        	});
 		        }
@@ -946,6 +968,7 @@ if (!main || !main.utils || !main.utils.createClass) {
 
 	        // Создаем объект CAdESCOM.CadesSignedData
             var oSignedData = cadesplugin.CreateObject("CAdESCOM.CadesSignedData");
+            // Значение свойства ContentEncoding должно быть задано до заполнения свойства Content
             // Данные будут перекодированы из Base64 в бинарный массив.
             //oSignedData.ContentEncoding = CADESCOM_BASE64_TO_BINARY;
             oSignedData.Content = text;
