@@ -24,7 +24,7 @@
     var plugin_resolve;
     var isOpera = 0;
     var isFireFox = 0;
-	var isEdge = 0;
+    var isEdge = 0;
     var failed_extensions = 0;
 
     var canPromise = !!window.Promise;
@@ -714,305 +714,338 @@
 //-----------------~ CryptoProAdapter ~---------------------------------------------------------------------
 if(!!window.Promise) {
     cadesplugin.then(function () {
-    		if (CryptoProAdapter) {
-    			CryptoProAdapter.prototype.variable.state = 1;
-    		} else {
-    			throw new Error("Ошибка инициализации CryptoProAdapter");
-    		}
-           },
-           function(error) {
-        	   throw new Error("Ошибка инициализации cadesplugin: " + error);
-           }
-   );
+        if (cryptoProAdapter) {
+            cryptoProAdapter.ready();
+        } else {
+            throw new Error("Ошибка инициализации CryptoProAdapter");
+        }
+    },
+    function(error) {
+        throw new Error("Ошибка инициализации cadesplugin: " + error);
+    });
 } else {
     window.addEventListener("message", function (event){
         if (event.data == "cadesplugin_loaded") {
-        	if (CryptoProAdapter) {
-    			CryptoProAdapter.prototype.variable.cadespluginState = 1;
-    		} else {
-    			throw new Error("Ошибка инициализации CryptoProAdapter");
-    		}
+            if (cryptoProAdapter) {
+                cryptoProAdapter.ready();
+            } else {
+                throw new Error("Ошибка инициализации CryptoProAdapter");
+            }
         } else if(event.data == "cadesplugin_load_error") {
-        	throw new Error("Ошибка инициализации cadesplugin: " + error);
+            throw new Error("Ошибка инициализации cadesplugin: " + error);
         }
-        },
-    false);
+    }, false);
     window.postMessage("cadesplugin_echo_request", "*");
 }
 
 if (!main || !main.utils || !main.utils.createClass) {
-	throw new Error("Не загружен файл Utils");
+    throw new Error("Не загружен файл Utils");
 } 
 
 ﻿;(function () {
     // already loaded
-    if(window.cryptoProAdapter)
+    if(window.cryptoProAdapter) {
         return;
-    
-	//~ Consts -----------------------------------------------------------------------------------------
+    }
+
+    //~ Consts -----------------------------------------------------------------------------------------
     I18N_ERROR_LOAD_CADESPLUGIN = "Плагин cadesplugin не доступен";
     UNDEFINED = -1;
     
-	//~ Variable -----------------------------------------------------------------------------------------
+    //~ Variable -----------------------------------------------------------------------------------------
     variable = {
-		cadespluginState: 0,				// Состояние загрузки cadesplugin
-		certs: [],							// Список сертификатов
-		debug: true,						// Режим расширенного логирования
-		error: undefined 					// Последняя ошибка
-	};
-	
-    //~ Constrction -----------------------------------------------------------------------------------------
-    construction = function() {
-    	//Нужно проверить совместимость с версией утилит
-		if (!main || main.utils.varsionMajor != 1) {
-			this.variable.error = {code: 601, message: "Не поддерживается данная версия классса утилит"};
-			throw new Error(this.variable.error.message);
-		}
-		if (this.variable.debug) {
-			cadesplugin.set_log_level(cadesplugin.LOG_LEVEL_DEBUG);
-		}
+        cadespluginState: 0,                // Состояние загрузки cadesplugin
+        certs: [],                          // Список сертификатов
+        debug: true,                        // Режим расширенного логирования
+        error: undefined,                   // Последняя ошибка
+        queue: []							// Очередь функций на выполнение при готовности плагина
     };
     
-	//~ Private methods -------------------------------------------------------------------------------------
+    //~ Constrction -----------------------------------------------------------------------------------------
+    construction = function() {
+        //Нужно проверить совместимость с версией утилит
+        if (!main || main.utils.varsionMajor != 1) {
+            this.variable.error = {code: 601, message: "Не поддерживается данная версия классса утилит"};
+            throw new Error(this.variable.error.message);
+        }
+        if (this.variable.debug) {
+            cadesplugin.set_log_level(cadesplugin.LOG_LEVEL_DEBUG);
+        }
+    };
+
+    //~ Private methods -------------------------------------------------------------------------------------
+    getObject = function(name, callback) {
+    	
+    };
+    
     /**
-	 * Логирование сообщения
-	 * 
-	 * @param message - Сообщение отправляемое в логгер
-	 */
-	log = function(message) {
-		console.log("Log: " + message);
-		try {
-			var dump = {proxy: {}, user: {}, message: message};
-			main.utils.copyProperty(this.variable, dump.proxy)
-			dump.user.browsers = navigator.userAgent;
-			dump.user.url = window.location.toString();
-			dump.user.time = (new Date()).getTime();
-			dump = JSON.stringify(dump);
-			$.ajax({
-				  async: true,
-				  url: this.variable.env.loggerURL,
-				  type: "POST",
-				  data: dump,
-				  success: function (data, textStatus) {}
-			});
-		} catch (e) {
-			// ignore
-		}
-	};
-	
-	/**
-	 * Проверка перед вызовом
-	 */
-	check = function() {
-		if (! variable.cadespluginState) {
-			this.variable.error = {code: 408, message: I18N_ERROR_LOAD_CADESPLUGIN};
-			throw new Error(this.variable.error.message);
-		}
-		
-	};
-	
-	/**
-	 * Обработка ошибки от cadesplugin
-	 */
-	handlerException = function(exception) {
-		var err = "";
-		try {
-			err += cadesplugin.getLastError(exception);
-		} catch (e) {
-			err += exception + "(Не удалось поулчить детали: " + e + ")"
-		}
-		return err;
-	};
-	
-	/**
-	 * Загрузить список сертификатов
-	 */
-	loadCerts = function() {
-		var cert;
-		var certsList = [];
-		
-		var oStore = cadesplugin.CreateObject("CAdESCOM.Store");
-		this.oStore.Open(cadesplugin.CAPICOM_CURRENT_USER_STORE, cadesplugin.CAPICOM_MY_STORE, cadesplugin.CAPICOM_STORE_OPEN_MAXIMUM_ALLOWED);
-		
-		var certCnt = this.oStore.Certificates.Count;
-		for (var i = 1; i <= certCnt; i++) {
-			try {
-		            cert = this.oStore.Certificates.Item(i);
-		            if (variable.debug) {
-				console.log("CryptoProAdapter: Вызыван getSigns: cert " + i);
-				console.log(cert);
-			     }
-		             certsList.push({id: "1", name: "2"});
-		        } catch (e) {
-		        	var err = "Ошибка при получении сертификата: " + handlerException(e);
-		        	certsList.push({id: UNDEFINED, name: err});
-		        }
-		}
-		this.oStore.Close();
-		variable.certs = certsList;
-	};
-	
-	/**
-	 * Создаем подпись данных
-	 */
-	createSign = function(signId, data, params) {
-		if (!params) {
-			params = {};
-		}
-		var isAddTimeStamp = !!params.isAddTimeStamp;
-		var isBinary = !!params.isBinary;
-		var isDocName = !!params.docName;
-		
-					// Ищем подпись
-			var oStore = cadesplugin.CreateObject("CAdESCOM.Store");
-	        oStore.Open(CAPICOM_CURRENT_USER_STORE, CAPICOM_MY_STORE, CAPICOM_STORE_OPEN_MAXIMUM_ALLOWED);
-	        var oCertificates = oStore.Certificates.Find(CAPICOM_CERTIFICATE_FIND_SUBJECT_NAME, signId);
-	        if (oCertificates.Count == 0) {
-	            alert("Certificate not found: " + certSubjectName);
-	            return;
-	        }
-	        var oCertificate = oCertificates.Item(1);
-			
-	        // Создаем подписанное сообщение
-	        // Создаем объект CAdESCOM.CPSigner
-	        var oSigner = cadesplugin.CreateObject("CAdESCOM.CPSigner");
-            oSigner.Certificate = oCertificate;
-            oSigner.TSAAddress = "http://cryptopro.ru/tsp/";
-
-	        // Создаем объект CAdESCOM.CadesSignedData
-            var oSignedData = cadesplugin.CreateObject("CAdESCOM.CadesSignedData");
-            // Значение свойства ContentEncoding должно быть задано до заполнения свойства Content
-            // Данные будут перекодированы из Base64 в бинарный массив.
-            //oSignedData.ContentEncoding = CADESCOM_BASE64_TO_BINARY;
-            oSignedData.Content = text;
-            
-            // Добавление информации о времени создания подписи
-    		var Attribute = CreateObject("CADESCOM.CPAttribute");
-    		Attribute.Name = CAPICOM_AUTHENTICATED_ATTRIBUTE_SIGNING_TIME;
-    		var oTimeNow = new Date();
-    		Attribute.Value = ConvertDate(oTimeNow);
-    		oSigner.AuthenticatedAttributes2.Add(Attribute);
-
-	        // Вычисляем значение подписи, подпись будет перекодирована в BASE64
+     * Логирование сообщения
+     * 
+     * @param message - Сообщение отправляемое в логгер
+     */
+    log = function(message) {
+        console.log("Log: " + message);
+        try {
+            var dump = {proxy: {}, user: {}, message: message};
+            main.utils.copyProperty(this.variable, dump.proxy)
+            dump.user.browsers = navigator.userAgent;
+            dump.user.url = window.location.toString();
+            dump.user.time = (new Date()).getTime();
+            dump = JSON.stringify(dump);
+            $.ajax({
+                  async: true,
+                  url: this.variable.env.loggerURL,
+                  type: "POST",
+                  data: dump,
+                  success: function (data, textStatus) {}
+            });
+        } catch (e) {
+            // ignore
+        }
+    };
+    
+    /**
+     * Проверка перед вызовом
+     */
+    check = function() {
+        if (! variable.cadespluginState) {
+            this.variable.error = {code: 408, message: I18N_ERROR_LOAD_CADESPLUGIN};
+            throw new Error(this.variable.error.message);
+        }
+        
+    };
+    
+    /**
+     * Обработка ошибки от cadesplugin
+     */
+    handlerException = function(exception) {
+        var err = "";
+        try {
+            err += cadesplugin.getLastError(exception);
+        } catch (e) {
+            err += exception + "(Не удалось поулчить детали: " + e + ")"
+        }
+        return err;
+    };
+    
+    /**
+     * Загрузить список сертификатов
+     */
+    loadCerts = function() {
+        var cert;
+        var certsList = [];
+        
+        var oStore = cadesplugin.CreateObject("CAdESCOM.Store");
+        this.oStore.Open(cadesplugin.CAPICOM_CURRENT_USER_STORE, cadesplugin.CAPICOM_MY_STORE, cadesplugin.CAPICOM_STORE_OPEN_MAXIMUM_ALLOWED);
+        
+        var certCnt = this.oStore.Certificates.Count;
+        for (var i = 1; i <= certCnt; i++) {
             try {
-                var sSignedMessage = oSignedData.SignCades(oSigner, CADESCOM_CADES_X_LONG_TYPE_1, true, CADESCOM_ENCODE_BASE64);
-            } catch (ex) {
-                alert("Failed to create signature. Error: " + cadesplugin.getLastError(ex));
-                return;
+                cert = this.oStore.Certificates.Item(i);
+                if (variable.debug) {
+                    console.log("CryptoProAdapter: Вызыван getSigns: cert " + i);
+                    console.log(cert);
+                }
+                certsList.push({id: "1", name: "2"});
+            } catch (e) {
+                var err = "Ошибка при получении сертификата: " + handlerException(e);
+                certsList.push({id: UNDEFINED, name: err});
             }
-	};
-	
-	 /**
-	 * Выполнить когда плагин будет готов
-	 */
-	ready: function(funct) {
-		
-	};
+        }
+        this.oStore.Close();
+        variable.certs = certsList;
+    };
+    
+    /**
+     * Создаем подпись данных
+     */
+    createSign = function(signId, data, params) {
+        if (!params) {
+            params = {};
+        }
+        var isAddTimeStamp = !!params.isAddTimeStamp;
+        var isBinary = !!params.isBinary;
+        var isDocName = !!params.docName;
+        
+        // Ищем подпись
+        var oStore = cadesplugin.CreateObject("CAdESCOM.Store");
+        oStore.Open(CAPICOM_CURRENT_USER_STORE, CAPICOM_MY_STORE, CAPICOM_STORE_OPEN_MAXIMUM_ALLOWED);
+        var oCertificates = oStore.Certificates.Find(CAPICOM_CERTIFICATE_FIND_SUBJECT_NAME, signId);
+        if (oCertificates.Count == 0) {
+            alert("Certificate not found: " + certSubjectName);
+            return;
+        }
+        var oCertificate = oCertificates.Item(1);
+        
+        // Создаем подписанное сообщение
+        // Создаем объект CAdESCOM.CPSigner
+        var oSigner = cadesplugin.CreateObject("CAdESCOM.CPSigner");
+        oSigner.Certificate = oCertificate;
+        oSigner.TSAAddress = "http://cryptopro.ru/tsp/";
 
-	//~ Public methods --------------------------------------------------------------------------------------
-	publicMethod = {
-		/**
-		 * Получить возможную причину отказа
-		 */
-		getErrorMessage: function() {
-			if (variable.debug) {
-				console.log("CryptoProAdapter: Вызыван getErrorMessage");
-			}
-			return variable.error;
-		},
-		
-		/**
-		 * Получить версию плагина.
-		 * 
-		 * @return Объект с данными о плагине
-		 */
-		getVersion: function() {
-			if (variable.debug) {
-				console.log("CryptoProAdapter: Вызыван getVersion");
-			}
-			var version = {};
-			version.adapter = "1.0";
-			if (cadesplugin) {
-				version.cadesplugin = cadesplugin.JSModuleVersion;
-			} else {
-				version.cadesplugin = "Плагин не сломался. Что-то пошло не так с CryptoProAdapter.js";
-				return version;
-			}
-			
-			try {
-				check();
-			} catch (e) {
-				version.csp = UNDEFINED;
-				version.extendbrower = UNDEFINED;
-			}
-			
-			return version;
-		},
-		
-		/**
-		 * Получить список установленных сертификатов.
-		 * 
-		 * @return  Карта: Ключ - ид сертификата(certSubjectName), Значение - описанием сертификата
-		 */
-		getSigns: function(isReload) {
-			if (variable.debug) {
-				console.log("CryptoProAdapter: Вызыван getSigns");
-			}
-			check();
-			if (!!!isReload) {
-				loadCerts();
-			}
-			return variable.certs;
-		},
-		
-		/**
-		 * Проверка подписи.
-		 * @param signId - ид сертификата
-		 * @param params - 
-		 * 
-		 * @return Список в виде строк с описание ошибок
-		 */
-		validateSign: function(signId, params) {
-			if (variable.debug) {
-				console.log("CryptoProAdapter: Вызыван validateSign");
-			}
-			check();
-			
-			return undefined;
-		},
-		
-		/**
-		 * Подписать строковое представление
-		 * @param signId - ид сертификата
-		 * 
-		 * @return Строка с подписью в формате BASE64
-		 */
-		signString: function(signId, text) {
-			if (variable.debug) {
-				console.log("CryptoProAdapter: Вызыван signString");
-			}
-			check();
-			
+        // Создаем объект CAdESCOM.CadesSignedData
+        var oSignedData = cadesplugin.CreateObject("CAdESCOM.CadesSignedData");
+        // Значение свойства ContentEncoding должно быть задано до заполнения свойства Content
+        // Данные будут перекодированы из Base64 в бинарный массив.
+        //oSignedData.ContentEncoding = CADESCOM_BASE64_TO_BINARY;
+        oSignedData.Content = text;
+        
+        // Добавление информации о времени создания подписи
+        var Attribute = CreateObject("CADESCOM.CPAttribute");
+        Attribute.Name = CAPICOM_AUTHENTICATED_ATTRIBUTE_SIGNING_TIME;
+        var oTimeNow = new Date();
+        Attribute.Value = ConvertDate(oTimeNow);
+        oSigner.AuthenticatedAttributes2.Add(Attribute);
 
-
-	        	return sSignedMessage;
-		},
-		
+        // Вычисляем значение подписи, подпись будет перекодирована в BASE64
+        try {
+            var sSignedMessage = oSignedData.SignCades(oSigner, CADESCOM_CADES_X_LONG_TYPE_1, true, CADESCOM_ENCODE_BASE64);
+        } catch (ex) {
+            alert("Failed to create signature. Error: " + cadesplugin.getLastError(ex));
+            return;
+        }
+    };
+    
+    //~ Public methods --------------------------------------------------------------------------------------
+    publicMethod = {
 		/**
-		 * Подписать бинарные данные
-		 * @param signId - ид сертификата
-		 * 
-		 * @return Строка с подписью
-		 */
-		signData: function(signId, data) {
-			if (variable.debug) {
-				console.log("CryptoProAdapter: Вызыван signData");
-			}
-			check();
-			
-			return undefined;
-		},
-		
+	     * Выполнить когда плагин будет готов
+	     */
+	    ready: function(funct) {
+	    	if (variable.debug) {
+                console.log("CryptoProAdapter: Вызыван ready");
+            }
+	    	if (funct instanceof Function) {
+	    		variable.queue.push(funct);
+	    		return;
+	    	}
+	    	
+	    	variable.cadespluginState = 1;
+	    	variable.async = !cadesplugin.CreateObject;
+	    	for (var i = 0; i < variable.queue.length; i++) {
+	    		variable.queue[i].call(window);
+	    	}
+	    },
+	    
+        /**
+         * Получить возможную причину отказа
+         */
+        getErrorMessage: function() {
+            if (variable.debug) {
+                console.log("CryptoProAdapter: Вызыван getErrorMessage");
+            }
+            return variable.error;
+        },
+        
+        /**
+         * Получить версию плагина.
+         * 
+         * @return Объект с данными о плагине
+         */
+        getVersion: function(callback) {
+            if (variable.debug) {
+                console.log("CryptoProAdapter: Вызыван getVersion");
+            }
+            var version = {};
+            version.adapter = "1.0";
+            if (cadesplugin) {
+                version.cadesplugin = cadesplugin.JSModuleVersion;
+            } else {
+                version.cadesplugin = "Плагин не сломался. Что-то пошло не так с CryptoProAdapter.js";
+                return version;
+            }
+            
+            try {
+                check();
+            } catch (e) {
+                version.csp = UNDEFINED;
+                version.extendbrower = UNDEFINED;
+                return version;
+            }
+            if (variable.async) {
+            	var pr = async function() {
+            		try {
+                    	var oAbout = await cadesplugin.CreateObjectAsync("CAdESCOM.About");
+                    	console.log(oAbout);
+                    	var oVersion = await oAbout.PluginVersion;
+                    	
+                    	version.csp = await oVersion.toString();
+        			} catch (e) {
+        				version.csp = handlerException(e);
+        				console.log(e.stack);
+        			}
+                    
+        			if (callback instanceof Function) {
+        				callback.call(window, version);
+                	}
+            	}
+            	pr();
+            }
+            
+        },
+        
+        /**
+         * Получить список установленных сертификатов.
+         * 
+         * @return  Карта: Ключ - ид сертификата(certSubjectName), Значение - описанием сертификата
+         */
+        getSigns: function(isReload) {
+            if (variable.debug) {
+                console.log("CryptoProAdapter: Вызыван getSigns");
+            }
+            check();
+            if (!!!isReload) {
+                loadCerts();
+            }
+            return variable.certs;
+        },
+        
+        /**
+         * Проверка подписи.
+         * @param signId - ид сертификата
+         * @param params - 
+         * 
+         * @return Список в виде строк с описание ошибок
+         */
+        validateSign: function(signId, params) {
+            if (variable.debug) {
+                console.log("CryptoProAdapter: Вызыван validateSign");
+            }
+            check();
+            
+            return undefined;
+        },
+        
+        /**
+         * Подписать строковое представление
+         * @param signId - ид сертификата
+         * 
+         * @return Строка с подписью в формате BASE64
+         */
+        signString: function(signId, text) {
+            if (variable.debug) {
+                console.log("CryptoProAdapter: Вызыван signString");
+            }
+            check();
+
+            return sSignedMessage;
+        },
+        
+        /**
+         * Подписать бинарные данные
+         * @param signId - ид сертификата
+         * 
+         * @return Строка с подписью
+         */
+        signData: function(signId, data) {
+            if (variable.debug) {
+                console.log("CryptoProAdapter: Вызыван signData");
+            }
+            check();
+            
+            return undefined;
+        },
+
     }
     
     // init
