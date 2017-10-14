@@ -750,11 +750,16 @@ if (!main || !main.utils || !main.utils.createClass) {
 
     //~ Consts -----------------------------------------------------------------------------------------
     I18N_ERROR_LOAD_CADESPLUGIN = "Плагин cadesplugin не доступен";
+    I18N_ERROR_LOAD_IMPL = "Реализация еще не доступна";
     UNDEFINED = -1;
+    BUILD = 1;
     
     //~ Variable -----------------------------------------------------------------------------------------
     variable = {
+    	location: "/",						// URL хранения скриптов
+    	implLoadState: 0,					// Состояние загрузки реализации
         cadespluginState: 0,                // Состояние загрузки cadesplugin
+        impl: undefined,					// 
         certs: [],                          // Список сертификатов
         debug: true,                        // Режим расширенного логирования
         error: undefined,                   // Последняя ошибка
@@ -765,16 +770,62 @@ if (!main || !main.utils || !main.utils.createClass) {
     construction = function() {
         //Нужно проверить совместимость с версией утилит
         if (!main || main.utils.varsionMajor != 1) {
-            this.variable.error = {code: 601, message: "Не поддерживается данная версия классса утилит"};
-            throw new Error(this.variable.error.message);
+            variable.error = {code: 601, message: "Не поддерживается данная версия классса утилит"};
+            throw new Error(variable.error.message);
         }
-        if (this.variable.debug) {
+        if (variable.debug) {
             cadesplugin.set_log_level(cadesplugin.LOG_LEVEL_DEBUG);
         }
+        if (!cadesplugin.CreateObject && !cadesplugin.CreateObjectAsync) {
+        	variable.error = {code: 601, message: "Не удалось определить реализацию"};
+            throw new Error(this.variable.error.message);
+        } else if (!!cadesplugin.CreateObject) {
+        	variable.implName = "CryptoProCode";
+        } else if (!!cadesplugin.CreateObjectAsync) {
+        	variable.implName = "CryptoProCodeAync";
+        } else {
+        	variable.error = {code: 601, message: "Не удалось определить реализацию"};
+            throw new Error(variable.error.message);
+        }
+        var implUrl = main.utils.generateUrl(variable.location + "/" + variable.implName + ".js?v=" + BUILD);
+        
+        if (variable.debug) {
+			console.log("CryptoProAdapter: URL сервиса в хранилище " + variable.location);
+			console.log("CryptoProAdapter: Имя класса сервиса реализуцию прокси методы '" + variable.implName + "'");
+			console.log("CryptoProAdapter: URL бекенда: '" + implUrl);
+		}
+        
+		main.utils.loadScript(implUrl, this, implLoadOk, implLoadError);
     };
 
-    //~ Private methods -------------------------------------------------------------------------------------
-    getObject = function(name, callback) {
+    //~ Private methods -------------------------------------------------------------------------------------   
+    /**
+	 * События выполняемые в случаи успешной загрузки сервиса
+	 * 
+	 */
+    implLoadOk = function() {
+    	if (variable.debug) {
+			console.log("CryptoProAdapter: Инициализируем сервис " + variable.implName);
+		}
+    	
+    	try {
+			variable.impl = new window[variable.implName]();
+			variable.impl.setDebugEnable(variable.debug);
+			variable.implLoadState = 1;
+		} catch (e) {
+			if (variable.debug) {
+				console.log(e.stack);
+			}
+			variable.error = {message: "Произошли ошибки при инициализации сервиса: " + e.message};
+			implLoadError();
+		}
+    };
+    
+    /**
+	 * События выполняемые при отказе в загрузке сервиса
+	 * 
+	 */
+    implLoadError = function() {
     	
     };
     
@@ -784,7 +835,7 @@ if (!main || !main.utils || !main.utils.createClass) {
      * @param message - Сообщение отправляемое в логгер
      */
     log = function(message) {
-        console.log("Log: " + message);
+        console.log("CryptoProAdapter Log: " + message);
         try {
             var dump = {proxy: {}, user: {}, message: message};
             main.utils.copyProperty(this.variable, dump.proxy)
@@ -804,15 +855,39 @@ if (!main || !main.utils || !main.utils.createClass) {
         }
     };
     
+    callbackError = function(callback, errorMessage, errorCode) {
+    	var error = {
+    			error: {
+    				code: errorCode,
+    				message: errorMessage
+    			}
+    	};
+    	callback.call(window, error);
+    };
+    
     /**
      * Проверка перед вызовом
      */
-    check = function() {
+    checkAvailability = function(callback) {
+    	variable.error = undefined;
+    	
         if (! variable.cadespluginState) {
-            this.variable.error = {code: 408, message: I18N_ERROR_LOAD_CADESPLUGIN};
-            throw new Error(this.variable.error.message);
+            variable.error = {code: 408, message: I18N_ERROR_LOAD_CADESPLUGIN};
         }
         
+        if (! variable.implLoadState) {
+            variable.error = {code: 408, message: I18N_ERROR_LOAD_IMPL};
+        }
+        
+        if (variable.error) {
+        	if (!!callback) {
+        		callbackError(callback, variable.error.message, variable.error.code);
+        	} else {
+        		throw new Error(variable.error.message);
+        	}
+        	return false;
+        }
+        return true;
     };
     
     /**
@@ -828,83 +903,11 @@ if (!main || !main.utils || !main.utils.createClass) {
         return err;
     };
     
-    /**
-     * Загрузить список сертификатов
-     */
-    loadCerts = function() {
-        var cert;
-        var certsList = [];
-        
-        var oStore = cadesplugin.CreateObject("CAdESCOM.Store");
-        this.oStore.Open(cadesplugin.CAPICOM_CURRENT_USER_STORE, cadesplugin.CAPICOM_MY_STORE, cadesplugin.CAPICOM_STORE_OPEN_MAXIMUM_ALLOWED);
-        
-        var certCnt = this.oStore.Certificates.Count;
-        for (var i = 1; i <= certCnt; i++) {
-            try {
-                cert = this.oStore.Certificates.Item(i);
-                if (variable.debug) {
-                    console.log("CryptoProAdapter: Вызыван getSigns: cert " + i);
-                    console.log(cert);
-                }
-                certsList.push({id: "1", name: "2"});
-            } catch (e) {
-                var err = "Ошибка при получении сертификата: " + handlerException(e);
-                certsList.push({id: UNDEFINED, name: err});
-            }
-        }
-        this.oStore.Close();
-        variable.certs = certsList;
-    };
-    
-    /**
-     * Создаем подпись данных
-     */
-    createSign = function(signId, data, params) {
-        if (!params) {
-            params = {};
-        }
-        var isAddTimeStamp = !!params.isAddTimeStamp;
-        var isBinary = !!params.isBinary;
-        var isDocName = !!params.docName;
-        
-        // Ищем подпись
-        var oStore = cadesplugin.CreateObject("CAdESCOM.Store");
-        oStore.Open(CAPICOM_CURRENT_USER_STORE, CAPICOM_MY_STORE, CAPICOM_STORE_OPEN_MAXIMUM_ALLOWED);
-        var oCertificates = oStore.Certificates.Find(CAPICOM_CERTIFICATE_FIND_SUBJECT_NAME, signId);
-        if (oCertificates.Count == 0) {
-            alert("Certificate not found: " + certSubjectName);
-            return;
-        }
-        var oCertificate = oCertificates.Item(1);
-        
-        // Создаем подписанное сообщение
-        // Создаем объект CAdESCOM.CPSigner
-        var oSigner = cadesplugin.CreateObject("CAdESCOM.CPSigner");
-        oSigner.Certificate = oCertificate;
-        oSigner.TSAAddress = "http://cryptopro.ru/tsp/";
-
-        // Создаем объект CAdESCOM.CadesSignedData
-        var oSignedData = cadesplugin.CreateObject("CAdESCOM.CadesSignedData");
-        // Значение свойства ContentEncoding должно быть задано до заполнения свойства Content
-        // Данные будут перекодированы из Base64 в бинарный массив.
-        //oSignedData.ContentEncoding = CADESCOM_BASE64_TO_BINARY;
-        oSignedData.Content = text;
-        
-        // Добавление информации о времени создания подписи
-        var Attribute = CreateObject("CADESCOM.CPAttribute");
-        Attribute.Name = CAPICOM_AUTHENTICATED_ATTRIBUTE_SIGNING_TIME;
-        var oTimeNow = new Date();
-        Attribute.Value = ConvertDate(oTimeNow);
-        oSigner.AuthenticatedAttributes2.Add(Attribute);
-
-        // Вычисляем значение подписи, подпись будет перекодирована в BASE64
-        try {
-            var sSignedMessage = oSignedData.SignCades(oSigner, CADESCOM_CADES_X_LONG_TYPE_1, true, CADESCOM_ENCODE_BASE64);
-        } catch (ex) {
-            alert("Failed to create signature. Error: " + cadesplugin.getLastError(ex));
-            return;
-        }
-    };
+    callbackCheck = function(callback) {
+    	if (!(callback instanceof Function)) {
+        	throw new Error("Вызов только с ф-цией обратного вызова");
+    	}
+    }
     
     //~ Public methods --------------------------------------------------------------------------------------
     publicMethod = {
@@ -921,10 +924,11 @@ if (!main || !main.utils || !main.utils.createClass) {
 	    	}
 	    	
 	    	variable.cadespluginState = 1;
-	    	variable.async = !cadesplugin.CreateObject;
 	    	for (var i = 0; i < variable.queue.length; i++) {
 	    		variable.queue[i].call(window);
 	    	}
+	    	
+	    	return undefined;
 	    },
 	    
         /**
@@ -946,42 +950,28 @@ if (!main || !main.utils || !main.utils.createClass) {
             if (variable.debug) {
                 console.log("CryptoProAdapter: Вызыван getVersion");
             }
+            
+            callbackCheck(callback);
+            if (!checkAvailability(callback)) {
+            	return;
+            }
+            
             var version = {};
             version.adapter = "1.0";
             if (cadesplugin) {
                 version.cadesplugin = cadesplugin.JSModuleVersion;
             } else {
-                version.cadesplugin = "Плагин не сломался. Что-то пошло не так с CryptoProAdapter.js";
-                return version;
+            	callbackError(callback, "Плагин не сломался. Что-то пошло не так с CryptoProAdapter.js");
+                return;
             }
             
-            try {
-                check();
-            } catch (e) {
-                version.csp = UNDEFINED;
-                version.extendbrower = UNDEFINED;
-                return version;
-            }
-            if (variable.async) {
-            	var pr = async function() {
-            		try {
-                    	var oAbout = await cadesplugin.CreateObjectAsync("CAdESCOM.About");
-                    	console.log(oAbout);
-                    	var oVersion = await oAbout.PluginVersion;
-                    	
-                    	version.csp = await oVersion.toString();
-        			} catch (e) {
-        				version.csp = handlerException(e);
-        				console.log(e.stack);
-        			}
-                    
-        			if (callback instanceof Function) {
-        				callback.call(window, version);
-                	}
-            	}
-            	pr();
-            }
+            if (variable.impl.getVersion instanceof Function) {
+            	variable.impl.getVersion(callback, version);
+			} else {
+				callbackError(callback, "Метод buy не поддерживается", 501);
+			}
             
+            return undefined;
         },
         
         /**
@@ -989,15 +979,20 @@ if (!main || !main.utils || !main.utils.createClass) {
          * 
          * @return  Карта: Ключ - ид сертификата(certSubjectName), Значение - описанием сертификата
          */
-        getSigns: function(isReload) {
+        getSigns: function(isReload, callback) {
             if (variable.debug) {
                 console.log("CryptoProAdapter: Вызыван getSigns");
             }
-            check();
+            
+            callbackCheck(callback);
+            if (!checkAvailability(callback)) {
+            	return;
+            }
+            
             if (!!!isReload) {
                 loadCerts();
             }
-            return variable.certs;
+            return undefined;
         },
         
         /**
@@ -1011,7 +1006,11 @@ if (!main || !main.utils || !main.utils.createClass) {
             if (variable.debug) {
                 console.log("CryptoProAdapter: Вызыван validateSign");
             }
-            check();
+            
+            callbackCheck(callback);
+            if (!checkAvailability(callback)) {
+            	return;
+            }
             
             return undefined;
         },
@@ -1026,9 +1025,13 @@ if (!main || !main.utils || !main.utils.createClass) {
             if (variable.debug) {
                 console.log("CryptoProAdapter: Вызыван signString");
             }
-            check();
+            
+            callbackCheck(callback);
+            if (!checkAvailability(callback)) {
+            	return;
+            }
 
-            return sSignedMessage;
+            return undefined;
         },
         
         /**
@@ -1041,7 +1044,11 @@ if (!main || !main.utils || !main.utils.createClass) {
             if (variable.debug) {
                 console.log("CryptoProAdapter: Вызыван signData");
             }
-            check();
+            
+            callbackCheck(callback);
+            if (!checkAvailability(callback)) {
+            	return;
+            }
             
             return undefined;
         },
