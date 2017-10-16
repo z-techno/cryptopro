@@ -103,7 +103,7 @@
                 try {
                     cert = oStore.Certificates.Item(i);
                     if (variable.debug) {
-                        console.log("CryptoProAdapter: Вызыван getSigns: cert " + i);
+                        console.log("CryptoProCode: Вызыван getSigns: cert " + i);
                         console.log(cert);
                     }
                     certsList.push({id: "1", name: "2"});

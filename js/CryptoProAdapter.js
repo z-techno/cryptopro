@@ -977,7 +977,7 @@ if(!!window.Promise) {
             if (variable.impl.getVersion instanceof Function) {
             	variable.impl.getVersion(callback, version);
 			} else {
-				callbackError(callback, "Метод buy не поддерживается", 501);
+				callbackError(callback, "Метод getVersion не поддерживается", 501);
 			}
             
             return undefined;
