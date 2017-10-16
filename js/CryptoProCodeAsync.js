@@ -5,11 +5,11 @@
     }
 
     //~ Consts -----------------------------------------------------------------------------------------
-    I18N_ERROR_LOAD_CADESPLUGIN = "Плагин cadesplugin не доступен";
+    var CONSTS = I18N_ERROR_LOAD_CADESPLUGIN = "Плагин cadesplugin не доступен";
     UNDEFINED = -1;
     
     //~ Variable -----------------------------------------------------------------------------------------
-    variable = {
+    var variable = {
         cadespluginState: 0,                // Состояние загрузки cadesplugin
         certs: [],                          // Список сертификатов
         debug: false,                        // Режим расширенного логирования
@@ -21,17 +21,21 @@
     construction = function() {
         //Нужно проверить совместимость с версией утилит
         if (!main || main.utils.varsionMajor != 1) {
-            this.variable.error = {code: 601, message: "Не поддерживается данная версия классса утилит"};
-            throw new Error(this.variable.error.message);
+            variable.error = {code: 601, message: "Не поддерживается данная версия классса утилит"};
+            throw new Error(variable.error.message);
         }
-        if (this.variable.debug) {
+        if (variable.debug) {
             cadesplugin.set_log_level(cadesplugin.LOG_LEVEL_DEBUG);
+        } else {
+        	cadesplugin.set_log_level(cadesplugin.LOG_LEVEL_INFO);
         }
     };
 
     //~ Private methods -------------------------------------------------------------------------------------
-    getObject = function(name, callback) {
-    	
+    var callCallBack = function(callback, args) {
+    	if (callback instanceof Function) {
+			callback.call(window, args);
+    	}
     };
     
     //~ Public methods --------------------------------------------------------------------------------------
@@ -42,6 +46,9 @@
          */
         setDebugEnable: function(debug) {
             variable.debug = debug;
+            if (variable.debug) {
+                cadesplugin.set_log_level(cadesplugin.LOG_LEVEL_DEBUG);
+            }
         },
         
         /**
@@ -49,18 +56,11 @@
          * 
          * @return Объект с данными о плагине
          */
-        getVersion: function(callback) {
+        getVersion: async function(callback, versionInit) {
             if (variable.debug) {
-                console.log("CryptoProAdapter: Вызыван getVersion");
+                console.log("CryptoProCodeAsync: Вызыван getVersion");
             }
-            var version = {};
-            version.adapter = "1.0";
-            if (cadesplugin) {
-                version.cadesplugin = cadesplugin.JSModuleVersion;
-            } else {
-                version.cadesplugin = "Плагин не сломался. Что-то пошло не так с CryptoProAdapter.js";
-                return version;
-            }
+            var version = main.utils.copyProperty(versionInit, {});
             
             try {
             	var oAbout = await cadesplugin.CreateObjectAsync("CAdESCOM.About");
@@ -69,14 +69,13 @@
             	
             	version.csp = await oVersion.toString();
 			} catch (e) {
-				version.csp = handlerException(e);
-				console.log(e.stack);
+				version.csp = cryptoProAdapter.handlerException(e);
+				if (variable.debug) {
+	                console.log(e);
+	            }
 			}
             
-			if (callback instanceof Function) {
-				callback.call(window, version);
-        	}
-            
+			callCallBack(callback, version);
         }
     };
     

@@ -9,7 +9,7 @@
     UNDEFINED = -1;
     
     //~ Variable -----------------------------------------------------------------------------------------
-    variable = {
+    var variable = {
         cadespluginState: 0,                // Состояние загрузки cadesplugin
         certs: [],                          // Список сертификатов
         debug: false,                        // Режим расширенного логирования
@@ -21,17 +21,21 @@
     construction = function() {
         //Нужно проверить совместимость с версией утилит
         if (!main || main.utils.varsionMajor != 1) {
-            this.variable.error = {code: 601, message: "Не поддерживается данная версия классса утилит"};
-            throw new Error(this.variable.error.message);
+            variable.error = {code: 601, message: "Не поддерживается данная версия классса утилит"};
+            throw new Error(variable.error.message);
         }
-        if (this.variable.debug) {
+        if (variable.debug) {
             cadesplugin.set_log_level(cadesplugin.LOG_LEVEL_DEBUG);
+        } else {
+        	cadesplugin.set_log_level(cadesplugin.LOG_LEVEL_INFO);
         }
     };
 
     //~ Private methods -------------------------------------------------------------------------------------
-    getObject = function(name, callback) {
-    	
+    var callCallBack = function(callback, args) {
+    	if (callback instanceof Function) {
+			callback.call(window, args);
+    	}
     };
     
     //~ Public methods --------------------------------------------------------------------------------------
@@ -42,17 +46,57 @@
          */
         setDebugEnable: function(debug) {
             variable.debug = debug;
+            if (variable.debug) {
+                cadesplugin.set_log_level(cadesplugin.LOG_LEVEL_DEBUG);
+            }
+        },
+        
+        /**
+         * Получить версию плагина.
+         * 
+         * @return Объект с данными о плагине
+         */
+        getVersion: function(callback, versionInit) {
+            if (variable.debug) {
+                console.log("CryptoProCode: Вызыван getVersion");
+            }
+            var version = main.utils.copyProperty(versionInit, {});
+            
+            try {
+            	var oAbout = cadesplugin.CreateObject("CAdESCOM.About");
+            	var currentPluginVersion = oAbout.PluginVersion;
+            	if (typeof (currentPluginVersion) == "object") {
+        			currentPluginVersion = currentPluginVersion.toString();
+        		}
+            	
+        		if (typeof (currentPluginVersion) == "undefined") {
+        			currentPluginVersion = oAbout.Version;
+        		}
+        		
+        		if (!!currentPluginVersion) {
+        			version.csp = currentPluginVersion;
+        		} else {
+        			version.csp = "Не удалось определить";
+        		}
+			} catch (e) {
+				version.csp = cryptoProAdapter.handlerException(e);
+				if (variable.debug) {
+	                console.log(e);
+	            }
+			}
+            
+			callCallBack(callback, [version]);
         },
         
         /**
          * Загрузить список сертификатов
          */
-        loadCerts: function() {
+        loadCerts: function(callback, storeUser, storeName, storeMaxAllowed) {
             var cert;
             var certsList = [];
             
             var oStore = cadesplugin.CreateObject("CAdESCOM.Store");
-            this.oStore.Open(cadesplugin.CAPICOM_CURRENT_USER_STORE, cadesplugin.CAPICOM_MY_STORE, cadesplugin.CAPICOM_STORE_OPEN_MAXIMUM_ALLOWED);
+            this.oStore.Open(storeUser, storeName, storeMaxAllowed);
             
             var certCnt = this.oStore.Certificates.Count;
             for (var i = 1; i <= certCnt; i++) {
@@ -69,13 +113,13 @@
                 }
             }
             this.oStore.Close();
-            variable.certs = certsList;
+            callCallBack(callback, [certsList]);
         },
         
         /**
          * Создаем подпись данных
          */
-        createSign: function(signId, data, params) {
+        createSign: function(callback, storeUser, storeName, storeMaxAllowed, signId, data, params) {
             if (!params) {
                 params = {};
             }
@@ -85,8 +129,8 @@
             
             // Ищем подпись
             var oStore = cadesplugin.CreateObject("CAdESCOM.Store");
-            oStore.Open(CAPICOM_CURRENT_USER_STORE, CAPICOM_MY_STORE, CAPICOM_STORE_OPEN_MAXIMUM_ALLOWED);
-            var oCertificates = oStore.Certificates.Find(CAPICOM_CERTIFICATE_FIND_SUBJECT_NAME, signId);
+            oStore.Open(storeUser, storeName, storeMaxAllowed);
+            var oCertificates = oStore.Certificates.Find(cadesplugin.CAPICOM_CERTIFICATE_FIND_SUBJECT_NAME, signId);
             if (oCertificates.Count == 0) {
                 alert("Certificate not found: " + certSubjectName);
                 return;
@@ -108,7 +152,7 @@
             
             // Добавление информации о времени создания подписи
             var Attribute = CreateObject("CADESCOM.CPAttribute");
-            Attribute.Name = CAPICOM_AUTHENTICATED_ATTRIBUTE_SIGNING_TIME;
+            Attribute.Name = cadesplugin.CAPICOM_AUTHENTICATED_ATTRIBUTE_SIGNING_TIME;
             var oTimeNow = new Date();
             Attribute.Value = ConvertDate(oTimeNow);
             oSigner.AuthenticatedAttributes2.Add(Attribute);

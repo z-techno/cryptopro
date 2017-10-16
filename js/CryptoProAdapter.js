@@ -747,6 +747,7 @@ if (!main || !main.utils || !main.utils.createClass) {
     if(window.cryptoProAdapter) {
         return;
     }
+    var _this = this;
 
     //~ Consts -----------------------------------------------------------------------------------------
     I18N_ERROR_LOAD_CADESPLUGIN = "Плагин cadesplugin не доступен";
@@ -755,8 +756,8 @@ if (!main || !main.utils || !main.utils.createClass) {
     BUILD = 1;
     
     //~ Variable -----------------------------------------------------------------------------------------
-    variable = {
-    	location: "/",						// URL хранения скриптов
+    var variable = {
+    	location: "/js",						// URL хранения скриптов
     	implLoadState: 0,					// Состояние загрузки реализации
         cadespluginState: 0,                // Состояние загрузки cadesplugin
         impl: undefined,					// 
@@ -782,7 +783,7 @@ if (!main || !main.utils || !main.utils.createClass) {
         } else if (!!cadesplugin.CreateObject) {
         	variable.implName = "CryptoProCode";
         } else if (!!cadesplugin.CreateObjectAsync) {
-        	variable.implName = "CryptoProCodeAync";
+        	variable.implName = "CryptoProCodeAsync";
         } else {
         	variable.error = {code: 601, message: "Не удалось определить реализацию"};
             throw new Error(variable.error.message);
@@ -809,7 +810,7 @@ if (!main || !main.utils || !main.utils.createClass) {
 		}
     	
     	try {
-			variable.impl = new window[variable.implName]();
+			variable.impl = window[variable.implName];
 			variable.impl.setDebugEnable(variable.debug);
 			variable.implLoadState = 1;
 		} catch (e) {
@@ -819,6 +820,10 @@ if (!main || !main.utils || !main.utils.createClass) {
 			variable.error = {message: "Произошли ошибки при инициализации сервиса: " + e.message};
 			implLoadError();
 		}
+		
+		if (variable.cadespluginState) {
+    		callQueue();
+    	}
     };
     
     /**
@@ -890,22 +895,15 @@ if (!main || !main.utils || !main.utils.createClass) {
         return true;
     };
     
-    /**
-     * Обработка ошибки от cadesplugin
-     */
-    handlerException = function(exception) {
-        var err = "";
-        try {
-            err += cadesplugin.getLastError(exception);
-        } catch (e) {
-            err += exception + "(Не удалось поулчить детали: " + e + ")"
-        }
-        return err;
-    };
-    
     callbackCheck = function(callback) {
     	if (!(callback instanceof Function)) {
         	throw new Error("Вызов только с ф-цией обратного вызова");
+    	}
+    }
+    
+    callQueue = function() {
+    	for (var i = 0; i < variable.queue.length; i++) {
+    		variable.queue[i].call(window);
     	}
     }
     
@@ -924,8 +922,9 @@ if (!main || !main.utils || !main.utils.createClass) {
 	    	}
 	    	
 	    	variable.cadespluginState = 1;
-	    	for (var i = 0; i < variable.queue.length; i++) {
-	    		variable.queue[i].call(window);
+	    	
+	    	if (variable.implLoadState) {
+	    		callQueue();
 	    	}
 	    	
 	    	return undefined;
@@ -939,6 +938,19 @@ if (!main || !main.utils || !main.utils.createClass) {
                 console.log("CryptoProAdapter: Вызыван getErrorMessage");
             }
             return variable.error;
+        },
+        
+        /**
+         * Обработка ошибки от cadesplugin
+         */
+        handlerException: function(exception) {
+            var err = "";
+            try {
+                err += cadesplugin.getLastError(exception);
+            } catch (e) {
+                err += exception + "(Не удалось поулчить детали: " + e + ")"
+            }
+            return err;
         },
         
         /**
@@ -1002,7 +1014,7 @@ if (!main || !main.utils || !main.utils.createClass) {
          * 
          * @return Список в виде строк с описание ошибок
          */
-        validateSign: function(signId, params) {
+        validateSign: function(signId, params, callback) {
             if (variable.debug) {
                 console.log("CryptoProAdapter: Вызыван validateSign");
             }
@@ -1021,7 +1033,7 @@ if (!main || !main.utils || !main.utils.createClass) {
          * 
          * @return Строка с подписью в формате BASE64
          */
-        signString: function(signId, text) {
+        signString: function(signId, text, callback) {
             if (variable.debug) {
                 console.log("CryptoProAdapter: Вызыван signString");
             }
@@ -1040,7 +1052,7 @@ if (!main || !main.utils || !main.utils.createClass) {
          * 
          * @return Строка с подписью
          */
-        signData: function(signId, data) {
+        signData: function(signId, data, callback) {
             if (variable.debug) {
                 console.log("CryptoProAdapter: Вызыван signData");
             }

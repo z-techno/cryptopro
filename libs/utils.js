@@ -3,7 +3,7 @@ if (!main) var main = {};
 main.utils = {
 	version: '1.2.0',
 	varsionMajor: 1,
-	varsionMinor: 200,
+	varsionMinor: 201,
 	/**
 	 * Блок утилит проверок
 	 * */
@@ -257,9 +257,18 @@ main.utils = {
 					var h = "0" + date.getHours();
 					var mm = "0" + date.getMinutes();
 					var s = "0" + date.getSeconds();
-					return d.substr(-2)+"."+m.substr(-2)+"."+y + " " + h.substr(-2) + ":" + mm.substr(-2);
+					return d.substr(-2) + "." + m.substr(-2) + "." + y + " " + h.substr(-2) + ":" + mm.substr(-2);
 				} else 
 					return "";
+			},
+			
+			convertDate: function(date) {
+				switch (navigator.appName) {
+					case "Microsoft Internet Explorer":
+						return date.getVarDate();
+					default:
+						return date;
+				}
 			}
 	}, 
 	uploadContent: function(paramsIn) {
