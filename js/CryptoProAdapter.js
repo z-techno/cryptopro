@@ -738,10 +738,6 @@ if(!!window.Promise) {
     window.postMessage("cadesplugin_echo_request", "*");
 }
 
-if (!main || !main.utils || !main.utils.createClass) {
-    throw new Error("Не загружен файл Utils");
-} 
-
 ﻿;(function () {
     // already loaded
     if(window.cryptoProAdapter) {
