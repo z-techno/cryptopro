@@ -758,6 +758,7 @@ if(!!window.Promise) {
         cadespluginState: 0,                // Состояние загрузки cadesplugin
         impl: undefined,					// 
         certs: [],                          // Список сертификатов
+        certsLazy: true,					// Отложенная загружка сертификатов
         debug: true,                        // Режим расширенного логирования
         error: undefined,                   // Последняя ошибка
         queue: []							// Очередь функций на выполнение при готовности плагина
@@ -992,13 +993,36 @@ if(!!window.Promise) {
                 console.log("CryptoProAdapter: Вызыван getSigns");
             }
             
+            if (!!!callback) {
+            	callback = isReload;
+            	isReload = false;
+            }
+            
+            if (!isReload && variable.certsLazy) {
+            	isReload = true;
+            }
+            
             callbackCheck(callback);
             if (!checkAvailability(callback)) {
             	return;
             }
             
-            if (!!!isReload) {
-                loadCerts();
+            var proxyCallback = function(res) {
+            	if (!!!res.error) {
+            		variable.certs = res;
+            		variable.certsLazy = false;
+            	}
+            	callback.call(window, res);
+            }
+            
+            if (isReload) {
+            	if (variable.impl.loadCerts instanceof Function) {
+                	variable.impl.loadCerts(proxyCallback, cadesplugin.CAPICOM_CURRENT_USER_STORE, cadesplugin.CAPICOM_MY_STORE, cadesplugin.CAPICOM_STORE_OPEN_MAXIMUM_ALLOWED);
+    			} else {
+    				callbackError(callback, "Метод loadCerts не поддерживается", 501);
+    			}
+            } else {
+            	proxyCallback.call(window, variable.certs);
             }
             return undefined;
         },

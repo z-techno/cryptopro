@@ -31,21 +31,41 @@
 					cnt.innerHTML = cnt.innerHTML + "getVersion: " + JSON.stringify(vera) + "<br/>";
 				});
 				
-				cryptoProAdapter.getSigns(function(response) {
-					
-				});
+				try {
+					cryptoProAdapter.getSigns(function(response) {
+						if (response.error) {
+							cnt.innerHTML = cnt.innerHTML + "Ошибка - getVersion: " + JSON.stringify(response.error) + "<br/>";
+						} else {
+							cnt.innerHTML = cnt.innerHTML + "getSigns: " + JSON.stringify(response) + "<br/>";
+						}
+					});
+				} catch (e) {
+					cnt.innerHTML = cnt.innerHTML + "Ошибка - getSigns: " + e + "<br/>";
+				}
 		  		
-				cryptoProAdapter.validateSign(function(response) {
-					
-				});
+				try {
+					cryptoProAdapter.validateSign(function(response) {
+						
+					});
+				} catch (e) {
+					cnt.innerHTML = cnt.innerHTML + "Ошибка - validateSign: " + e + "<br/>";
+				}
 				
-				cryptoProAdapter.signString(function(response) {
-					
-				});
+				try {
+					cryptoProAdapter.signString(function(response) {
+						
+					});
+				} catch (e) {
+					cnt.innerHTML = cnt.innerHTML + "Ошибка - signString: " + e + "<br/>";
+				}
 				
-				cryptoProAdapter.signData(function(response) {
-					
-				});
+				try {
+					cryptoProAdapter.signData(function(response) {
+						
+					});
+				} catch (e) {
+					cnt.innerHTML = cnt.innerHTML + "Ошибка - signData: " + e + "<br/>";
+				}
 	  		});
 	  	} else {
 	  		cnt.innerHTML = cnt.innerHTML + "cryptoProAdapter - Ошибка загрузки ";

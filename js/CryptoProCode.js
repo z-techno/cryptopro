@@ -96,12 +96,12 @@
             var certsList = [];
             
             var oStore = cadesplugin.CreateObject("CAdESCOM.Store");
-            this.oStore.Open(storeUser, storeName, storeMaxAllowed);
+            oStore.Open(storeUser, storeName, storeMaxAllowed);
             
-            var certCnt = this.oStore.Certificates.Count;
+            var certCnt = oStore.Certificates.Count;
             for (var i = 1; i <= certCnt; i++) {
                 try {
-                    cert = this.oStore.Certificates.Item(i);
+                    cert = oStore.Certificates.Item(i);
                     if (variable.debug) {
                         console.log("CryptoProAdapter: Вызыван getSigns: cert " + i);
                         console.log(cert);
@@ -112,7 +112,7 @@
                     certsList.push({id: UNDEFINED, name: err});
                 }
             }
-            this.oStore.Close();
+            oStore.Close();
             callCallBack(callback, [certsList]);
         },
         

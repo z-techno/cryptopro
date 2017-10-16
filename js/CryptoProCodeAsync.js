@@ -76,6 +76,35 @@
 			}
             
 			callCallBack(callback, version);
+        },
+        
+        /**
+         * Загрузить список сертификатов
+         */
+        loadCerts: async function(callback, storeUser, storeName, storeMaxAllowed) {
+            var cert;
+            var certsList = [];
+            
+            var oStore = await cadesplugin.CreateObjectAsync("CAdESCOM.Store");
+            await oStore.Open();
+            
+            var all_certs = await oStore.Certificates;
+            var certCnt = await all_certs.Count;
+            for (var i = 1; i <= certCnt; i++) {
+                try {
+                    cert = this.oStore.Certificates.Item(i);
+                    if (variable.debug) {
+                        console.log("CryptoProAdapter: Вызыван getSigns: cert " + i);
+                        console.log(cert);
+                    }
+                    certsList.push({id: "1", name: "2"});
+                } catch (e) {
+                    var err = "Ошибка при получении сертификата: " + handlerException(e);
+                    certsList.push({id: UNDEFINED, name: err});
+                }
+            }
+            await oStore.Close();
+            callCallBack(callback, [certsList]);
         }
     };
     
