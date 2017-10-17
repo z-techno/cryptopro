@@ -31,12 +31,15 @@
 					cnt.innerHTML = cnt.innerHTML + "getVersion: " + JSON.stringify(vera) + "<br/>";
 				});
 				
+				var sid = "hz";
 				try {
 					cryptoProAdapter.getSigns(function(response) {
 						if (response.error) {
 							cnt.innerHTML = cnt.innerHTML + "Ошибка - getVersion: " + JSON.stringify(response.error) + "<br/>";
 						} else {
 							cnt.innerHTML = cnt.innerHTML + "getSigns: " + JSON.stringify(response) + "<br/>";
+							sid = response[0].id;
+							cnt.innerHTML = cnt.innerHTML + "getSigns, fix: " + sid + "<br/>";
 						}
 					});
 				} catch (e) {
@@ -52,8 +55,12 @@
 				}
 				
 				try {
-					cryptoProAdapter.signString(function(response) {
-						
+					cryptoProAdapter.signString(sid, "test text", function(response) {
+						if (response.error) {
+							cnt.innerHTML = cnt.innerHTML + "Ошибка - signString: " + JSON.stringify(response.error) + "<br/>";
+						} else {
+							cnt.innerHTML = cnt.innerHTML + "signString: <hr/>" + response + "<hr/><br/>";
+						}
 					});
 				} catch (e) {
 					cnt.innerHTML = cnt.innerHTML + "Ошибка - signString: " + e + "<br/>";

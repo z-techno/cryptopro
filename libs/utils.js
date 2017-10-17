@@ -270,12 +270,10 @@ main.utils = {
 			},
 			
 			convertDate: function(date) {
-				switch (navigator.appName) {
-					case "Microsoft Internet Explorer":
-						return date.getVarDate();
-					default:
-						return date;
+				if (main.utils.checker.isIE() || main.utils.checker.isEdge()) {
+					return date.getVarDate();
 				}
+				return date;
 			}
 	}, 
 	uploadContent: function(paramsIn) {

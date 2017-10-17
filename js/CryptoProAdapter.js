@@ -984,6 +984,18 @@ if(!!window.Promise) {
             return undefined;
         },
         
+        getSignById: function(sid) {
+        	if (variable.certsLazy) {
+        		throw new Error("Еще не был загружен список сертификатов");
+        	}
+        	for (var i = 0; i < variable.certs.length; i++) {
+				if (sid = variable.certs[i].id) {
+					return variable.certs[i];
+				}
+			}
+        	throw new Error("Сертификат с номером " + sid + " не существует");
+        },
+        
         /**
          * Получить список установленных сертификатов.
          * 
@@ -1063,6 +1075,28 @@ if(!!window.Promise) {
             if (!checkAvailability(callback)) {
             	return;
             }
+            
+            if (variable.impl.createSign instanceof Function) {
+            	try {
+            		var signSubjectName = cryptoProAdapter.getSignById(signId).publicKey.subjectName;
+            		signSubjectName = signSubjectName.replace("CN=", "");
+            		
+            		params = {isAddTimeStamp: true};
+                	variable.impl.createSign(
+                			callback, 
+                			cadesplugin.CAPICOM_CURRENT_USER_STORE, 
+                			cadesplugin.CAPICOM_MY_STORE, 
+                			cadesplugin.CAPICOM_STORE_OPEN_MAXIMUM_ALLOWED,
+                			signSubjectName, 
+                			text, 
+                			params
+                	);
+				} catch (e) {
+					callbackError(callback, "" + e, 505);
+				}
+			} else {
+				callbackError(callback, "Метод loadCerts не поддерживается", 501);
+			}
 
             return undefined;
         },
@@ -1087,16 +1121,16 @@ if(!!window.Promise) {
         },
         
         processing: function(certDirty) {
-        	var certConteiner = {id: UNDEFINED, name: UNDEFINED, properties: {}, privateKey: {}};
+        	var certConteiner = {id: UNDEFINED, name: UNDEFINED, publicKey: {}, privateKey: {}};
         	if (!certDirty.SerialNumber) {
         		throw new Error("Плагин вернул подпись без номер: " + JSON.stringify(certDirty));
         	}
         	certConteiner.id = certDirty.SerialNumber;
-        	certConteiner.properties.serialNumber = certDirty.SerialNumber;
-        	certConteiner.properties.thumbprint = certDirty.Thumbprint;
-        	certConteiner.properties.version = certDirty.Version;
-        	certConteiner.properties.ValidFromDate = certDirty.ValidFromDate;
-        	certConteiner.properties.ValidToDate = certDirty.ValidToDate;
+        	certConteiner.publicKey.serialNumber = certDirty.SerialNumber;
+        	certConteiner.publicKey.thumbprint = certDirty.Thumbprint;
+        	certConteiner.publicKey.version = certDirty.Version;
+        	certConteiner.publicKey.ValidFromDate = certDirty.ValidFromDate;
+        	certConteiner.publicKey.ValidToDate = certDirty.ValidToDate;
         	
         	var pk;
         	if (certDirty.PrivateKey) {
@@ -1117,9 +1151,9 @@ if(!!window.Promise) {
         	};
         	
         	//
-        	certConteiner.properties.issuerName = certDirty.IssuerName;
+        	certConteiner.publicKey.issuerName = certDirty.IssuerName;
         	certConteiner.name = certDirty.SubjectName;
-        	certConteiner.properties.subjectName = certDirty.SubjectName;
+        	certConteiner.publicKey.subjectName = certDirty.SubjectName;
         	
         	return certConteiner;
         }

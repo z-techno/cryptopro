@@ -138,13 +138,13 @@
                 }
             }
             oStore.Close();
-            callCallBack(callback, [certsList]);
+            callCallBack(callback, certsList);
         },
         
         /**
          * Создаем подпись данных
          */
-        createSign: function(callback, storeUser, storeName, storeMaxAllowed, signId, data, params) {
+        createSign: function(callback, storeUser, storeName, storeMaxAllowed, signSubjectName, data, params) {
             if (!params) {
                 params = {};
             }
@@ -155,10 +155,11 @@
             // Ищем подпись
             var oStore = cadesplugin.CreateObject("CAdESCOM.Store");
             oStore.Open(storeUser, storeName, storeMaxAllowed);
-            var oCertificates = oStore.Certificates.Find(cadesplugin.CAPICOM_CERTIFICATE_FIND_SUBJECT_NAME, signId);
+            var oCertificates = oStore.Certificates.Find(cadesplugin.CAPICOM_CERTIFICATE_FIND_SUBJECT_NAME, signSubjectName);
             if (oCertificates.Count == 0) {
-                alert("Certificate not found: " + certSubjectName);
-                return;
+            	callCallBack(callback, ["Не удалось найти сертификат с названием " + signSubjectName]);
+            } else if (oCertificates.Count > 1) {
+            	callCallBack(callback, ["Не уникальное название сертификата " + signSubjectName]);
             }
             var oCertificate = oCertificates.Item(1);
             
@@ -171,24 +172,29 @@
             // Создаем объект CAdESCOM.CadesSignedData
             var oSignedData = cadesplugin.CreateObject("CAdESCOM.CadesSignedData");
             // Значение свойства ContentEncoding должно быть задано до заполнения свойства Content
-            // Данные будут перекодированы из Base64 в бинарный массив.
-            //oSignedData.ContentEncoding = CADESCOM_BASE64_TO_BINARY;
-            oSignedData.Content = text;
+            if (isBinary) {
+            	// Данные будут перекодированы из Base64 в бинарный массив.
+            	oSignedData.ContentEncoding = cadesplugin.CADESCOM_BASE64_TO_BINARY;
+            }
+            oSignedData.Content = data;
             
-            // Добавление информации о времени создания подписи
-            var Attribute = CreateObject("CADESCOM.CPAttribute");
-            Attribute.Name = cadesplugin.CAPICOM_AUTHENTICATED_ATTRIBUTE_SIGNING_TIME;
-            var oTimeNow = new Date();
-            Attribute.Value = ConvertDate(oTimeNow);
-            oSigner.AuthenticatedAttributes2.Add(Attribute);
+            if (isAddTimeStamp) {
+            	// Добавление информации о времени создания подписи
+            	var Attribute = cadesplugin.CreateObject("CADESCOM.CPAttribute");
+            	Attribute.Name = cadesplugin.CAPICOM_AUTHENTICATED_ATTRIBUTE_SIGNING_TIME;
+            	var oTimeNow = new Date();
+            	Attribute.Value = main.utils.convert.convertDate(oTimeNow);
+            	oSigner.AuthenticatedAttributes2.Add(Attribute);
+            }
 
             // Вычисляем значение подписи, подпись будет перекодирована в BASE64
+            var sSignedMessage;
             try {
-                var sSignedMessage = oSignedData.SignCades(oSigner, CADESCOM_CADES_X_LONG_TYPE_1, true, CADESCOM_ENCODE_BASE64);
-            } catch (ex) {
-                alert("Failed to create signature. Error: " + cadesplugin.getLastError(ex));
-                return;
+                sSignedMessage = oSignedData.SignCades(oSigner, cadesplugin.CADESCOM_CADES_X_LONG_TYPE_1, true, cadesplugin.CADESCOM_ENCODE_BASE64);
+            } catch (e) {
+            	sSignedMessage = "Failed to create signature. Error: " + cadesplugin.getLastError(e);
             }
+            callCallBack(callback, [sSignedMessage]);
         }
     };
     
