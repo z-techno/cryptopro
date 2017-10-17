@@ -711,7 +711,7 @@
     check_plugin_working();
 }());
 
-//-----------------~ CryptoProAdapter ~---------------------------------------------------------------------
+//-----------------~ CryptoProAdapter v 1.0 ~----------------------------------------------------------------
 if(!!window.Promise) {
     cadesplugin.then(function () {
         if (cryptoProAdapter) {
@@ -738,6 +738,7 @@ if(!!window.Promise) {
     window.postMessage("cadesplugin_echo_request", "*");
 }
 
+//~ cryptoProAdapter ----------------------------------------------------------------------------------------
 ﻿;(function () {
     // already loaded
     if(window.cryptoProAdapter) {
@@ -745,13 +746,13 @@ if(!!window.Promise) {
     }
     var _this = this;
 
-    //~ Consts -----------------------------------------------------------------------------------------
+    //~ Consts ----------------------------------------------------------------------------------------------
     I18N_ERROR_LOAD_CADESPLUGIN = "Плагин cadesplugin не доступен";
     I18N_ERROR_LOAD_IMPL = "Реализация еще не доступна";
     UNDEFINED = -1;
     BUILD = 1;
     
-    //~ Variable -----------------------------------------------------------------------------------------
+    //~ Variable --------------------------------------------------------------------------------------------
     var variable = {
     	location: "/js",						// URL хранения скриптов
     	implLoadState: 0,					// Состояние загрузки реализации
@@ -796,7 +797,7 @@ if(!!window.Promise) {
 		main.utils.loadScript(implUrl, this, implLoadOk, implLoadError);
     };
 
-    //~ Private methods -------------------------------------------------------------------------------------   
+    //~ Private methods -------------------------------------------------------------------------------------
     /**
 	 * События выполняемые в случаи успешной загрузки сервиса
 	 * 
@@ -1084,6 +1085,44 @@ if(!!window.Promise) {
             
             return undefined;
         },
+        
+        processing: function(certDirty) {
+        	var certConteiner = {id: UNDEFINED, name: UNDEFINED, properties: {}, privateKey: {}};
+        	if (!certDirty.SerialNumber) {
+        		throw new Error("Плагин вернул подпись без номер: " + JSON.stringify(certDirty));
+        	}
+        	certConteiner.id = certDirty.SerialNumber;
+        	certConteiner.properties.serialNumber = certDirty.SerialNumber;
+        	certConteiner.properties.thumbprint = certDirty.Thumbprint;
+        	certConteiner.properties.version = certDirty.Version;
+        	certConteiner.properties.ValidFromDate = certDirty.ValidFromDate;
+        	certConteiner.properties.ValidToDate = certDirty.ValidToDate;
+        	
+        	var pk;
+        	if (certDirty.PrivateKey) {
+        		pk = certDirty.PrivateKey;
+        	} else {
+        		pk = {
+    				ContainerName: UNDEFINED,
+            		ProviderName: UNDEFINED,
+            		ProviderType: UNDEFINED,
+            		UniqueContainerName: UNDEFINED,
+        		};
+        	}
+        	certConteiner.privateKey = {
+        			containerName: pk.ContainerName,
+            		providerName: pk.ProviderName,
+            		providerType: pk.ProviderType,
+            		uniqueContainerName: pk.UniqueContainerName
+        	};
+        	
+        	//
+        	certConteiner.properties.issuerName = certDirty.IssuerName;
+        	certConteiner.name = certDirty.SubjectName;
+        	certConteiner.properties.subjectName = certDirty.SubjectName;
+        	
+        	return certConteiner;
+        }
 
     }
     
@@ -1091,3 +1130,6 @@ if(!!window.Promise) {
     construction();
     window.cryptoProAdapter = publicMethod;
 }());
+
+//~ CryptoProCert -------------------------------------------------------------------------------------------
+

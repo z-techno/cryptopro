@@ -92,23 +92,48 @@
          * Загрузить список сертификатов
          */
         loadCerts: function(callback, storeUser, storeName, storeMaxAllowed) {
+        	var certsList = [];
             var cert;
-            var certsList = [];
+            var certPrivate;
             
             var oStore = cadesplugin.CreateObject("CAdESCOM.Store");
             oStore.Open(storeUser, storeName, storeMaxAllowed);
             
-            var certCnt = oStore.Certificates.Count;
-            for (var i = 1; i <= certCnt; i++) {
+            var certificates = oStore.Certificates; 
+            var certificatesCount = certificates.Count;
+            for (var i = 1; i <= certificatesCount; i++) {
                 try {
-                    cert = oStore.Certificates.Item(i);
-                    if (variable.debug) {
-                        console.log("CryptoProCode: Вызыван getSigns: cert " + i);
-                        console.log(cert);
+                	if (variable.debug) {
+                		console.log("CryptoProCode: запрашиваем сертификат с номером " + i);
+                		console.log(JSON.stringify(cert));
+                	}
+                    cert = certificates.Item(i);
+                    if (!!cert.PrivateKey) {
+                    	certPrivate = cert.PrivateKey;
+                    } else {
+                    	certPrivate = {};
                     }
-                    certsList.push({id: "1", name: "2"});
+                    cert = cryptoProAdapter.processing({
+                    	IssuerName: cert.IssuerName,
+                    	PrivateKey: {
+                    		ContainerName: certPrivate.ContainerName,
+                    		ProviderName: certPrivate.ProviderName,
+                    		ProviderType: certPrivate.ProviderType,
+                    		UniqueContainerName: certPrivate.UniqueContainerName
+                    	},
+                    	SerialNumber: cert.SerialNumber,
+                    	SubjectName: cert.SubjectName,
+                    	Thumbprint: cert.Thumbprint,
+                    	ValidFromDate: cert.ValidFromDate,
+                    	ValidToDate: cert.ValidToDate,
+                    	Version: cert.Version
+                    });
+                    if (variable.debug) {
+                        console.log("CryptoProCode: " + JSON.stringify(cert));
+                    }
+                    certsList.push(cert);
                 } catch (e) {
-                    var err = "Ошибка при получении сертификата: " + handlerException(e);
+                    var err = "Ошибка при получении сертификата: " + cryptoProAdapter.handlerException(e);
                     certsList.push({id: UNDEFINED, name: err});
                 }
             }

@@ -82,24 +82,53 @@
          * Загрузить список сертификатов
          */
         loadCerts: async function(callback, storeUser, storeName, storeMaxAllowed) {
+        	var certsList = [];
             var cert;
-            var certsList = [];
+            var isPk;
+            var pk;
+            var certPrivate;
             
             var oStore = await cadesplugin.CreateObjectAsync("CAdESCOM.Store");
             await oStore.Open();
             
-            var all_certs = await oStore.Certificates;
-            var certCnt = await all_certs.Count;
+            var allCerts = await oStore.Certificates;
+            var certCnt = await allCerts.Count;
             for (var i = 1; i <= certCnt; i++) {
                 try {
-                    cert = this.oStore.Certificates.Item(i);
+                    cert = await allCerts.Item(i);
                     if (variable.debug) {
-                        console.log("CryptoProCodeAsync: Вызыван getSigns: cert " + i);
+                        console.log("CryptoProCodeAsync: запрашиваем сертификат с номером " + i);
                         console.log(cert);
                     }
-                    certsList.push({id: "1", name: "2"});
+                    isPk = await cert.HasPrivateKey();
+                    if (!!isPk) {
+                    	pk = await cert.PrivateKey;
+                    	certPrivate = {
+                    			ContainerName: await pk.ContainerName,
+                        		ProviderName: await pk.ProviderName,
+                        		ProviderType: await pk.ProviderType,
+                        		UniqueContainerName: await pk.UniqueContainerName,
+                    	}
+                    } else {
+                    	certPrivate = {};
+                    }
+                    
+                    cert = cryptoProAdapter.processing({
+                    	IssuerName: await cert.IssuerName,
+                    	PrivateKey: await certPrivate,
+                    	SerialNumber: await cert.SerialNumber,
+                    	SubjectName: await cert.SubjectName,
+                    	Thumbprint: await cert.Thumbprint,
+                    	ValidFromDate: await cert.ValidFromDate,
+                    	ValidToDate: await cert.ValidToDate,
+                    	Version: await cert.Version
+                    });
+                    if (variable.debug) {
+                        console.log("CryptoProCodeAsync: " + JSON.stringify(cert));
+                    }
+                    certsList.push(cert);
                 } catch (e) {
-                    var err = "Ошибка при получении сертификата: " + handlerException(e);
+                    var err = "Ошибка при получении сертификата: " + cryptoProAdapter.handlerException(e);
                     certsList.push({id: UNDEFINED, name: err});
                 }
             }

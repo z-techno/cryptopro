@@ -219,6 +219,13 @@ main.utils = {
 		return uuid.join('');
 	}, 
 	convert: {
+			convertStringToDate: function(str) { // Пример входа: 17.10.2017 0:17:07, 2018-01-16T21:27:07.000Z
+				var strDate = "03.09.1979";
+				var dateParts = strDate.split(".");
+				var date = new Date(dateParts[2], (dateParts[1] - 1), dateParts[0]);
+				return str;
+			},
+			
 			convertDateToUnix: function(date) {
 				if (date)
 					return new Date(date).getTime();
