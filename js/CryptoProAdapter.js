@@ -1081,7 +1081,7 @@ if(!!window.Promise) {
             		var signSubjectName = cryptoProAdapter.getSignById(signId).publicKey.subjectName;
             		signSubjectName = signSubjectName.replace("CN=", "");
             		
-            		params = {isAddTimeStamp: true};
+            		var params = {isAddTimeStamp: true};
                 	variable.impl.createSign(
                 			callback, 
                 			cadesplugin.CAPICOM_CURRENT_USER_STORE, 
@@ -1095,7 +1095,7 @@ if(!!window.Promise) {
 					callbackError(callback, "" + e, 505);
 				}
 			} else {
-				callbackError(callback, "Метод loadCerts не поддерживается", 501);
+				callbackError(callback, "Метод createSign не поддерживается", 501);
 			}
 
             return undefined;
@@ -1116,6 +1116,27 @@ if(!!window.Promise) {
             if (!checkAvailability(callback)) {
             	return;
             }
+            if (variable.impl.createSign instanceof Function) {
+            	try {
+            		var signSubjectName = cryptoProAdapter.getSignById(signId).publicKey.subjectName;
+            		signSubjectName = signSubjectName.replace("CN=", "");
+            		
+            		params = {isAddTimeStamp: true, isBinary: true};
+                	variable.impl.createSign(
+                			callback, 
+                			cadesplugin.CAPICOM_CURRENT_USER_STORE, 
+                			cadesplugin.CAPICOM_MY_STORE, 
+                			cadesplugin.CAPICOM_STORE_OPEN_MAXIMUM_ALLOWED,
+                			signSubjectName, 
+                			data, 
+                			params
+                	);
+				} catch (e) {
+					callbackError(callback, "" + e, 505);
+				}
+			} else {
+				callbackError(callback, "Метод createSign не поддерживается", 501);
+			}
             
             return undefined;
         },

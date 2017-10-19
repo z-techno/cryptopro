@@ -63,8 +63,12 @@
 						}
 						
 						try {
-							cryptoProAdapter.signData(function(response) {
-								
+							cryptoProAdapter.signData(sid, "test text", function(response) {
+								if (response.error) {
+									cnt.innerHTML = cnt.innerHTML + "Ошибка - signData: " + JSON.stringify(response.error) + "<br/>";
+								} else {
+									cnt.innerHTML = cnt.innerHTML + "signData: <hr/>" + response + "<hr/><br/>";
+								}
 							});
 						} catch (e) {
 							cnt.innerHTML = cnt.innerHTML + "Ошибка - signData: " + e + "<br/>";
