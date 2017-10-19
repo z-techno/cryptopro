@@ -103,12 +103,29 @@
                     isPk = await cert.HasPrivateKey();
                     if (!!isPk) {
                     	pk = await cert.PrivateKey;
-                    	certPrivate = {
-                    			ContainerName: await pk.ContainerName,
-                        		ProviderName: await pk.ProviderName,
-                        		ProviderType: await pk.ProviderType,
-                        		UniqueContainerName: await pk.UniqueContainerName,
-                    	}
+                    	try {
+                    		certPrivate = {
+                            		ProviderName: await pk.ProviderName,
+                            		ProviderType: await pk.ProviderType
+                        	};
+						} catch (e) {
+							certPrivate = {
+                            		ProviderName: cryptoProAdapter.handlerException(e),
+                            		ProviderType: cryptoProAdapter.handlerException(e)
+                        	};
+						}
+						
+						try {
+                    		certPrivate = {
+                        			ContainerName: await pk.ContainerName,
+                            		UniqueContainerName: await pk.UniqueContainerName
+                        	};
+						} catch (e) {
+							certPrivate = {
+                        			ContainerName: cryptoProAdapter.handlerException(e),
+                            		UniqueContainerName: cryptoProAdapter.handlerException(e)
+                        	};
+						}
                     } else {
                     	certPrivate = {};
                     }
@@ -133,7 +150,67 @@
                 }
             }
             await oStore.Close();
-            callCallBack(callback, [certsList]);
+            callCallBack(callback, certsList);
+        },
+        
+        /**
+         * Создаем подпись данных
+         */
+        createSign: async function(callback, storeUser, storeName, storeMaxAllowed, signSubjectName, data, params) {
+            if (!params) {
+                params = {};
+            }
+            var isAddTimeStamp = !!params.isAddTimeStamp;
+            var isBinary = !!params.isBinary;
+            var isDocName = !!params.docName;
+            
+            // Ищем подпись
+            var oStore = await cadesplugin.CreateObjectAsync("CAdESCOM.Store");
+            oStore.Open(storeUser, storeName, storeMaxAllowed);
+            var oCertificates = await oStore.Certificates;
+            var oCertFined = await oCertificates.Find(cadesplugin.CAPICOM_CERTIFICATE_FIND_SUBJECT_NAME, signSubjectName);
+            if (await oCertFined.Count == 0) {
+            	callCallBack(callback, ["Не удалось найти сертификат с названием " + signSubjectName]);
+            } else if (await oCertificates.Count > 1) {
+            	callCallBack(callback, ["Не уникальное название сертификата " + signSubjectName]);
+            }
+            var oCertificate = await oCertificates.Item(1);
+            
+            // Создаем подписанное сообщение
+            // Создаем объект CAdESCOM.CPSigner
+            var oSigner = await cadesplugin.CreateObjectAsync("CAdESCOM.CPSigner");
+            await oSigner.propset_Certificate(oCertificate);
+            //await oSigner.propset_TSAAddress("http://cryptopro.ru/tsp/");
+
+            // Создаем объект CAdESCOM.CadesSignedData
+            var oSignedData = await cadesplugin.CreateObjectAsync("CAdESCOM.CadesSignedData");
+            // Значение свойства ContentEncoding должно быть задано до заполнения свойства Content
+            if (isBinary) {
+            	// Данные будут перекодированы из Base64 в бинарный массив.
+            	//oSignedData.ContentEncoding = cadesplugin.CADESCOM_BASE64_TO_BINARY;
+            	await oSignedData.propset_ContentEncoding(cadesplugin.CADESCOM_BASE64_TO_BINARY);
+            }
+            await oSignedData.propset_Content(data);
+            
+            if (isAddTimeStamp) {
+            	// Добавление информации о времени создания подписи
+            	var Attribute = await cadesplugin.CreateObjectAsync("CADESCOM.CPAttribute");
+            	await Attribute.propset_Name(cadesplugin.CAPICOM_AUTHENTICATED_ATTRIBUTE_SIGNING_TIME);
+            	var oTimeNow = new Date();
+            	await Attribute.propset_Value(main.utils.convert.convertDate(oTimeNow));
+            	var authAttr2 = await oSigner.AuthenticatedAttributes2;
+            	await authAttr2.Add(Attribute);
+            }
+
+            // Вычисляем значение подписи, подпись будет перекодирована в BASE64
+            var sSignedMessage;
+            try {
+            	await oSigner.propset_Options(1); //CAPICOM_CERTIFICATE_INCLUDE_WHOLE_CHAIN
+                sSignedMessage = await oSignedData.SignCades(oSigner, cadesplugin.CADESCOM_CADES_X_LONG_TYPE_1, true, cadesplugin.CADESCOM_ENCODE_BASE64);
+            } catch (e) {
+            	sSignedMessage = "Failed to create signature. Error: " + cadesplugin.getLastError(e);
+            }
+            callCallBack(callback, [sSignedMessage]);
         }
     };
     

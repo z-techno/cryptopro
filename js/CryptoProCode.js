@@ -103,35 +103,55 @@
             var certificatesCount = certificates.Count;
             for (var i = 1; i <= certificatesCount; i++) {
                 try {
+                	cert = certificates.Item(i);
                 	if (variable.debug) {
                 		console.log("CryptoProCode: запрашиваем сертификат с номером " + i);
                 		console.log(JSON.stringify(cert));
                 	}
-                    cert = certificates.Item(i);
                     if (!!cert.PrivateKey) {
                     	certPrivate = cert.PrivateKey;
                     } else {
                     	certPrivate = {};
                     }
-                    cert = cryptoProAdapter.processing({
+                    
+                    cert = {
                     	IssuerName: cert.IssuerName,
-                    	PrivateKey: {
-                    		ContainerName: certPrivate.ContainerName,
-                    		ProviderName: certPrivate.ProviderName,
-                    		ProviderType: certPrivate.ProviderType,
-                    		UniqueContainerName: certPrivate.UniqueContainerName
-                    	},
                     	SerialNumber: cert.SerialNumber,
                     	SubjectName: cert.SubjectName,
                     	Thumbprint: cert.Thumbprint,
                     	ValidFromDate: cert.ValidFromDate,
                     	ValidToDate: cert.ValidToDate,
                     	Version: cert.Version
-                    });
+                    };
+                    
+                    try {
+                    	cert.PrivateKey = {
+                    		ProviderName: certPrivate.ProviderName,
+                    		ProviderType: certPrivate.ProviderType
+                    	};
+					} catch (e) {
+						cert.PrivateKey = {
+	                    		ProviderName: cryptoProAdapter.handlerException(e),
+	                    		ProviderType: cryptoProAdapter.handlerException(e)
+	                    };
+					}
+					
+					try {
+                    	cert.PrivateKey = {
+                    		ContainerName: certPrivate.ContainerName,
+                    		UniqueContainerName: certPrivate.UniqueContainerName
+                    	};
+					} catch (e) {
+						cert.PrivateKey = {
+	                    		ContainerName: cryptoProAdapter.handlerException(e),
+	                    		UniqueContainerName: cryptoProAdapter.handlerException(e)
+	                    };
+					}
+                    
                     if (variable.debug) {
                         console.log("CryptoProCode: " + JSON.stringify(cert));
                     }
-                    certsList.push(cert);
+                    certsList.push(cryptoProAdapter.processing(cert));
                 } catch (e) {
                     var err = "Ошибка при получении сертификата: " + cryptoProAdapter.handlerException(e);
                     certsList.push({id: UNDEFINED, name: err});

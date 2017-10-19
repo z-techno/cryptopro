@@ -31,9 +31,9 @@
 					cnt.innerHTML = cnt.innerHTML + "getVersion: " + JSON.stringify(vera) + "<br/>";
 				});
 				
-				var sid = "hz";
 				try {
 					cryptoProAdapter.getSigns(function(response) {
+						var sid = "hz";
 						if (response.error) {
 							cnt.innerHTML = cnt.innerHTML + "Ошибка - getVersion: " + JSON.stringify(response.error) + "<br/>";
 						} else {
@@ -41,38 +41,40 @@
 							sid = response[0].id;
 							cnt.innerHTML = cnt.innerHTML + "getSigns, fix: " + sid + "<br/>";
 						}
+						
+						try {
+							cryptoProAdapter.validateSign(function(response) {
+								
+							});
+						} catch (e) {
+							cnt.innerHTML = cnt.innerHTML + "Ошибка - validateSign: " + e + "<br/>";
+						}
+						
+						try {
+							cryptoProAdapter.signString(sid, "test text", function(response) {
+								if (response.error) {
+									cnt.innerHTML = cnt.innerHTML + "Ошибка - signString: " + JSON.stringify(response.error) + "<br/>";
+								} else {
+									cnt.innerHTML = cnt.innerHTML + "signString: <hr/>" + response + "<hr/><br/>";
+								}
+							});
+						} catch (e) {
+							cnt.innerHTML = cnt.innerHTML + "Ошибка - signString: " + e + "<br/>";
+						}
+						
+						try {
+							cryptoProAdapter.signData(function(response) {
+								
+							});
+						} catch (e) {
+							cnt.innerHTML = cnt.innerHTML + "Ошибка - signData: " + e + "<br/>";
+						}
 					});
 				} catch (e) {
 					cnt.innerHTML = cnt.innerHTML + "Ошибка - getSigns: " + e + "<br/>";
 				}
 		  		
-				try {
-					cryptoProAdapter.validateSign(function(response) {
-						
-					});
-				} catch (e) {
-					cnt.innerHTML = cnt.innerHTML + "Ошибка - validateSign: " + e + "<br/>";
-				}
 				
-				try {
-					cryptoProAdapter.signString(sid, "test text", function(response) {
-						if (response.error) {
-							cnt.innerHTML = cnt.innerHTML + "Ошибка - signString: " + JSON.stringify(response.error) + "<br/>";
-						} else {
-							cnt.innerHTML = cnt.innerHTML + "signString: <hr/>" + response + "<hr/><br/>";
-						}
-					});
-				} catch (e) {
-					cnt.innerHTML = cnt.innerHTML + "Ошибка - signString: " + e + "<br/>";
-				}
-				
-				try {
-					cryptoProAdapter.signData(function(response) {
-						
-					});
-				} catch (e) {
-					cnt.innerHTML = cnt.innerHTML + "Ошибка - signData: " + e + "<br/>";
-				}
 	  		});
 	  	} else {
 	  		cnt.innerHTML = cnt.innerHTML + "cryptoProAdapter - Ошибка загрузки ";

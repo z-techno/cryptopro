@@ -10,7 +10,11 @@ main.utils = {
 	checker: {
 		isIE: function () {
 			var myNav = navigator.userAgent.toLowerCase();
-			return (myNav.indexOf('msie') != -1) ? parseInt(myNav.split('msie')[1]) : false;
+			var prepare = (myNav.indexOf('msie') != -1) ? parseInt(myNav.split('msie')[1]) : false;
+			if (!prepare) {
+				return /trident/i.test(myNav) && !!(document.uniqueID || document.documentMode || window.ActiveXObject || window.MSInputMethodContext);
+			}
+			return prepare;
 		},
 		isEdge: function () {
 			return /Edge/.test(navigator.userAgent);
