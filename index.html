@@ -32,14 +32,14 @@
 				});
 				
 				try {
-					cryptoProAdapter.getSigns(function(response) {
+					cryptoProAdapter.getCerts(function(response) {
 						var sid = "hz";
 						if (response.error) {
-							cnt.innerHTML = cnt.innerHTML + "Ошибка - getVersion: " + JSON.stringify(response.error) + "<br/>";
+							cnt.innerHTML = cnt.innerHTML + "Ошибка - getCerts: " + JSON.stringify(response.error) + "<br/>";
 						} else {
-							cnt.innerHTML = cnt.innerHTML + "getSigns: " + JSON.stringify(response) + "<br/>";
+							cnt.innerHTML = cnt.innerHTML + "getCerts: " + JSON.stringify(response) + "<br/>";
 							sid = response[0].id;
-							cnt.innerHTML = cnt.innerHTML + "getSigns, fix: " + sid + "<br/>";
+							cnt.innerHTML = cnt.innerHTML + "getCerts, fix: " + sid + "<br/>";
 						}
 						
 						var params = {

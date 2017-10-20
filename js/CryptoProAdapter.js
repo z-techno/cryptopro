@@ -984,7 +984,7 @@ if(!!window.Promise) {
             return undefined;
         },
         
-        getSignById: function(sid) {
+        getCertById: function(sid) {
         	if (variable.certsLazy) {
         		throw new Error("Еще не был загружен список сертификатов");
         	}
@@ -1001,7 +1001,7 @@ if(!!window.Promise) {
          * 
          * @return  Карта: Ключ - ид сертификата(certSubjectName), Значение - описанием сертификата
          */
-        getSigns: function(isReload, callback) {
+        getCerts: function(isReload, callback) {
             if (variable.debug) {
                 console.log("CryptoProAdapter: Вызыван getSigns");
             }
@@ -1042,12 +1042,12 @@ if(!!window.Promise) {
         
         /**
          * Проверка подписи.
-         * @param signId - ид сертификата
+         * @param certId - ид сертификата
          * @param params - 
          * 
          * @return Список в виде строк с описание ошибок
          */
-        validateCert: function(signId, params, callback) {
+        validateCert: function(certId, params, callback) {
             if (variable.debug) {
                 console.log("CryptoProAdapter: Вызыван validateSign");
             }
@@ -1058,7 +1058,7 @@ if(!!window.Promise) {
             }
 
             var validateErrorCode = 101;
-            var sign = cryptoProAdapter.getSignById(signId);
+            var sign = cryptoProAdapter.getCertById(certId);
             if (!sign.privateKey) {
             	callbackError(callback, "У сертификата нет приватной части", validateErrorCode);
             }
@@ -1077,7 +1077,7 @@ if(!!window.Promise) {
         
         /**
          * Подписать строковое представление
-         * @param signId - ид сертификата
+         * @param certId - ид сертификата
          * @param text - подписываемый текст
          * @param callback - Ф-ция ответа, с одним входным параметром в видк строки с подписью в формате BASE64
          * @param signType - тип подписи
@@ -1089,7 +1089,7 @@ if(!!window.Promise) {
          *            CADESCOM_CADES_X_LONG_TYPE_1 - Тип подписи CAdES-X Long Type 1
          * 
          */
-        signString: function(signId, text, callback, signType) {
+        signString: function(certId, text, callback, signType) {
             if (variable.debug) {
                 console.log("CryptoProAdapter: Вызыван signString");
             }
@@ -1101,8 +1101,8 @@ if(!!window.Promise) {
             
             if (variable.impl.createSign instanceof Function) {
             	try {
-            		var signSubjectName = cryptoProAdapter.getSignById(signId).publicKey.subjectName;
-            		var signSubjectName = signSubjectName.replace("CN=", "");
+            		var certSubjectName = cryptoProAdapter.getCertById(certId).publicKey.subjectName;
+            		certSubjectName = certSubjectName.replace("CN=", "");
             		
             		var params = {
             				signType: cadesplugin.CADESCOM_CADES_DEFAULT,
@@ -1117,7 +1117,7 @@ if(!!window.Promise) {
             		}
                 	variable.impl.createSign(
                 			callback, 
-                			signSubjectName, 
+                			certSubjectName, 
                 			text, 
                 			params
                 	);
@@ -1133,7 +1133,7 @@ if(!!window.Promise) {
         
         /**
          * Подписать бинарные данные
-         * @param signId - ид сертификата
+         * @param certId - ид сертификата
          * @param data - Бинарные данные в формате BASE64
          * @param callback - Ф-ция ответа, с одним входным параметром в видк строки с подписью в формате BASE64
          * @param signType - тип подписи
@@ -1145,7 +1145,7 @@ if(!!window.Promise) {
          *            CADESCOM_CADES_X_LONG_TYPE_1 - Тип подписи CAdES-X Long Type 1
          * 
          */
-        signData: function(signId, data, callback, signType) {
+        signData: function(certId, data, callback, signType) {
             if (variable.debug) {
                 console.log("CryptoProAdapter: Вызыван signData");
             }
@@ -1156,8 +1156,8 @@ if(!!window.Promise) {
             }
             if (variable.impl.createSign instanceof Function) {
             	try {
-            		var signSubjectName = cryptoProAdapter.getSignById(signId).publicKey.subjectName;
-            		var signSubjectName = signSubjectName.replace("CN=", "");
+            		var certSubjectName = cryptoProAdapter.getCertById(certId).publicKey.subjectName;
+            		certSubjectName = certSubjectName.replace("CN=", "");
             		
             		var params = {
             				signType: cadesplugin.CADESCOM_CADES_DEFAULT,
@@ -1172,7 +1172,7 @@ if(!!window.Promise) {
             		}
                 	variable.impl.createSign(
                 			callback, 
-                			signSubjectName, 
+                			certSubjectName, 
                 			data, 
                 			params
                 	);
