@@ -1047,7 +1047,7 @@ if(!!window.Promise) {
          * 
          * @return Список в виде строк с описание ошибок
          */
-        validateSign: function(signId, params, callback) {
+        validateCert: function(signId, params, callback) {
             if (variable.debug) {
                 console.log("CryptoProAdapter: Вызыван validateSign");
             }
@@ -1056,7 +1056,22 @@ if(!!window.Promise) {
             if (!checkAvailability(callback)) {
             	return;
             }
+
+            var validateErrorCode = 101;
+            var sign = cryptoProAdapter.getSignById(signId);
+            if (!sign.privateKey) {
+            	callbackError(callback, "У сертификата нет приватной части", validateErrorCode);
+            }
+            if (!sign.privateKey.valid == false) {
+            	callbackError(callback, "Сертификат не корректен", validateErrorCode);
+            }
             
+            var dateNow = new Date();
+            if (!(dateNow < sign.publicKey.validToDate)) {
+            	callbackError(callback, "Срок действия сертификата закончился", validateErrorCode);
+            }
+            
+            callback(true);
             return undefined;
         },
         

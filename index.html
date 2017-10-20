@@ -42,12 +42,21 @@
 							cnt.innerHTML = cnt.innerHTML + "getSigns, fix: " + sid + "<br/>";
 						}
 						
+						var params = {
+							firstName: "Test",
+							lastName: "Testing",
+							organization: "zzz"
+						};
 						try {
-							cryptoProAdapter.validateSign(function(response) {
-								
+							cryptoProAdapter.validateCert(sid, params, function(response) {
+								if (response == true) {
+									cnt.innerHTML = cnt.innerHTML + "validateCert: Сертификат с ид " + sid + " - валиден <br/>";
+								} else {
+									cnt.innerHTML = cnt.innerHTML + "Ошибка - validateCert: " + JSON.stringify(response.error) + "<br/>";
+								}
 							});
 						} catch (e) {
-							cnt.innerHTML = cnt.innerHTML + "Ошибка - validateSign: " + e + "<br/>";
+							cnt.innerHTML = cnt.innerHTML + "Ошибка - validateCert: " + e + "<br/>";
 						}
 						
 						try {
