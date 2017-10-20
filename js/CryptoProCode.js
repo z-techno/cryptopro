@@ -121,7 +121,8 @@
                     	Thumbprint: cert.Thumbprint,
                     	ValidFromDate: cert.ValidFromDate,
                     	ValidToDate: cert.ValidToDate,
-                    	Version: cert.Version
+                    	Version: cert.Version,
+                    	IsValid: cert.IsValid().Result
                     };
                     
                     try {
@@ -137,15 +138,15 @@
 					}
 					
 					try {
-                    	cert.PrivateKey = {
+                    	cert.PrivateKey = main.utils.mergeProperty(cert.PrivateKey, {
                     		ContainerName: certPrivate.ContainerName,
                     		UniqueContainerName: certPrivate.UniqueContainerName
-                    	};
+                    	});
 					} catch (e) {
-						cert.PrivateKey = {
+						cert.PrivateKey = main.utils.mergeProperty(cert.PrivateKey, {
 	                    		ContainerName: cryptoProAdapter.handlerException(e),
 	                    		UniqueContainerName: cryptoProAdapter.handlerException(e)
-	                    };
+	                    });
 					}
                     
                     if (variable.debug) {
@@ -164,7 +165,7 @@
         /**
          * Создаем подпись данных
          */
-        createSign: function(callback, storeUser, storeName, storeMaxAllowed, signSubjectName, data, params) {
+        createSign: function(callback, signSubjectName, data, params) {
             if (!params) {
                 params = {};
             }
@@ -174,7 +175,7 @@
             
             // Ищем подпись
             var oStore = cadesplugin.CreateObject("CAdESCOM.Store");
-            oStore.Open(storeUser, storeName, storeMaxAllowed);
+            oStore.Open(params.storeUser, params.storeName, params.storeMaxAllowed);
             var oCertificates = oStore.Certificates.Find(cadesplugin.CAPICOM_CERTIFICATE_FIND_SUBJECT_NAME, signSubjectName);
             if (oCertificates.Count == 0) {
             	callCallBack(callback, ["Не удалось найти сертификат с названием " + signSubjectName]);
@@ -210,6 +211,7 @@
             // Вычисляем значение подписи, подпись будет перекодирована в BASE64
             var sSignedMessage;
             try {
+            	oSigner.Options = cadesplugin.CAPICOM_CERTIFICATE_INCLUDE_WHOLE_CHAIN; // Сохраняет полную цепочку
                 sSignedMessage = oSignedData.SignCades(oSigner, cadesplugin.CADESCOM_CADES_X_LONG_TYPE_1, true, cadesplugin.CADESCOM_ENCODE_BASE64);
             } catch (e) {
             	sSignedMessage = "Failed to create signature. Error: " + cadesplugin.getLastError(e);

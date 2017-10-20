@@ -1063,10 +1063,18 @@ if(!!window.Promise) {
         /**
          * Подписать строковое представление
          * @param signId - ид сертификата
+         * @param text - подписываемый текст
+         * @param callback - Ф-ция ответа, с одним входным параметром в видк строки с подписью в формате BASE64
+         * @param signType - тип подписи
          * 
-         * @return Строка с подписью в формате BASE64
+         * Типы подписи
+         *            CADESCOM_CADES_DEFAULT - Тип подписи по умолчанию (CAdES-X Long Type 1)
+         *            CADESCOM_CADES_BES     - Тип подписи CAdES BES
+         *            CADESCOM_CADES_T       - Тип подписи CAdES-T
+         *            CADESCOM_CADES_X_LONG_TYPE_1 - Тип подписи CAdES-X Long Type 1
+         * 
          */
-        signString: function(signId, text, callback) {
+        signString: function(signId, text, callback, signType) {
             if (variable.debug) {
                 console.log("CryptoProAdapter: Вызыван signString");
             }
@@ -1079,14 +1087,21 @@ if(!!window.Promise) {
             if (variable.impl.createSign instanceof Function) {
             	try {
             		var signSubjectName = cryptoProAdapter.getSignById(signId).publicKey.subjectName;
-            		signSubjectName = signSubjectName.replace("CN=", "");
+            		var signSubjectName = signSubjectName.replace("CN=", "");
             		
-            		var params = {isAddTimeStamp: true};
+            		var params = {
+            				signType: cadesplugin.CADESCOM_CADES_DEFAULT,
+            				isAddTimeStamp: true, 
+            				isBinary: false,
+            				storeUser: cadesplugin.CAPICOM_CURRENT_USER_STORE,
+            				storeName: cadesplugin.CAPICOM_MY_STORE,
+            				storeMaxAllowed: cadesplugin.CAPICOM_STORE_OPEN_MAXIMUM_ALLOWED 
+            		};
+            		if (main.utils.isNumber(signType)) {
+            			params.signType = signType;
+            		}
                 	variable.impl.createSign(
                 			callback, 
-                			cadesplugin.CAPICOM_CURRENT_USER_STORE, 
-                			cadesplugin.CAPICOM_MY_STORE, 
-                			cadesplugin.CAPICOM_STORE_OPEN_MAXIMUM_ALLOWED,
                 			signSubjectName, 
                 			text, 
                 			params
@@ -1104,10 +1119,18 @@ if(!!window.Promise) {
         /**
          * Подписать бинарные данные
          * @param signId - ид сертификата
+         * @param data - Бинарные данные в формате BASE64
+         * @param callback - Ф-ция ответа, с одним входным параметром в видк строки с подписью в формате BASE64
+         * @param signType - тип подписи
          * 
-         * @return Строка с подписью
+         * Типы подписи
+         *            CADESCOM_CADES_DEFAULT - Тип подписи по умолчанию (CAdES-X Long Type 1)
+         *            CADESCOM_CADES_BES     - Тип подписи CAdES BES
+         *            CADESCOM_CADES_T       - Тип подписи CAdES-T
+         *            CADESCOM_CADES_X_LONG_TYPE_1 - Тип подписи CAdES-X Long Type 1
+         * 
          */
-        signData: function(signId, data, callback) {
+        signData: function(signId, data, callback, signType) {
             if (variable.debug) {
                 console.log("CryptoProAdapter: Вызыван signData");
             }
@@ -1119,14 +1142,21 @@ if(!!window.Promise) {
             if (variable.impl.createSign instanceof Function) {
             	try {
             		var signSubjectName = cryptoProAdapter.getSignById(signId).publicKey.subjectName;
-            		signSubjectName = signSubjectName.replace("CN=", "");
+            		var signSubjectName = signSubjectName.replace("CN=", "");
             		
-            		params = {isAddTimeStamp: true, isBinary: true};
+            		var params = {
+            				signType: cadesplugin.CADESCOM_CADES_DEFAULT,
+            				isAddTimeStamp: true, 
+            				isBinary: true,
+            				storeUser: cadesplugin.CAPICOM_CURRENT_USER_STORE,
+            				storeName: cadesplugin.CAPICOM_MY_STORE,
+            				storeMaxAllowed: cadesplugin.CAPICOM_STORE_OPEN_MAXIMUM_ALLOWED 
+            		};
+            		if (main.utils.isNumber(signType)) {
+            			params.signType = signType;
+            		}
                 	variable.impl.createSign(
                 			callback, 
-                			cadesplugin.CAPICOM_CURRENT_USER_STORE, 
-                			cadesplugin.CAPICOM_MY_STORE, 
-                			cadesplugin.CAPICOM_STORE_OPEN_MAXIMUM_ALLOWED,
                 			signSubjectName, 
                 			data, 
                 			params
@@ -1150,8 +1180,20 @@ if(!!window.Promise) {
         	certConteiner.publicKey.serialNumber = certDirty.SerialNumber;
         	certConteiner.publicKey.thumbprint = certDirty.Thumbprint;
         	certConteiner.publicKey.version = certDirty.Version;
-        	certConteiner.publicKey.ValidFromDate = certDirty.ValidFromDate;
-        	certConteiner.publicKey.ValidToDate = certDirty.ValidToDate;
+        	certConteiner.publicKey.validFromDate = certDirty.ValidFromDate;
+        	certConteiner.publicKey.validToDate = certDirty.ValidToDate;
+        	if (typeof certConteiner.publicKey.validFromDate != "date") {
+        		certConteiner.publicKey.validFromDate = new Date(certDirty.ValidFromDate);
+        		if (isNaN(certConteiner.publicKey.validFromDate)) {
+        			certConteiner.publicKey.validFromDate = certDirty.ValidFromDate;
+        		}
+        	}
+        	if (typeof certConteiner.publicKey.validToDate != "date") {
+        		certConteiner.publicKey.validToDate = new Date(certDirty.ValidToDate);
+        		if (isNaN(certConteiner.publicKey.validToDate)) {
+        			certConteiner.publicKey.validToDate = certDirty.ValidToDate;
+        		}
+        	}
         	
         	var pk;
         	if (certDirty.PrivateKey) {
@@ -1170,6 +1212,7 @@ if(!!window.Promise) {
             		providerType: pk.ProviderType,
             		uniqueContainerName: pk.UniqueContainerName
         	};
+        	certConteiner.privateKey.valid = certDirty.IsValid;
         	
         	//
         	certConteiner.publicKey.issuerName = certDirty.IssuerName;

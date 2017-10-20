@@ -101,7 +101,7 @@
                         console.log(cert);
                     }
                     isPk = await cert.HasPrivateKey();
-                    if (!!isPk) {
+                    if (isPk == true) {
                     	pk = await cert.PrivateKey;
                     	try {
                     		certPrivate = {
@@ -116,20 +116,22 @@
 						}
 						
 						try {
-                    		certPrivate = {
+                    		certPrivate = main.utils.mergeProperty(certPrivate, {
                         			ContainerName: await pk.ContainerName,
                             		UniqueContainerName: await pk.UniqueContainerName
-                        	};
+                        	});
 						} catch (e) {
-							certPrivate = {
+							certPrivate = main.utils.mergeProperty(certPrivate, {
                         			ContainerName: cryptoProAdapter.handlerException(e),
                             		UniqueContainerName: cryptoProAdapter.handlerException(e)
-                        	};
+                        	});
 						}
                     } else {
                     	certPrivate = {};
                     }
                     
+                    var validator = await cert.IsValid();
+                    var isValid = await validator.Result;
                     cert = cryptoProAdapter.processing({
                     	IssuerName: await cert.IssuerName,
                     	PrivateKey: await certPrivate,
@@ -138,8 +140,10 @@
                     	Thumbprint: await cert.Thumbprint,
                     	ValidFromDate: await cert.ValidFromDate,
                     	ValidToDate: await cert.ValidToDate,
-                    	Version: await cert.Version
+                    	Version: await cert.Version,
+                    	IsValid: isValid
                     });
+                    
                     if (variable.debug) {
                         console.log("CryptoProCodeAsync: " + JSON.stringify(cert));
                     }
@@ -156,7 +160,7 @@
         /**
          * Создаем подпись данных
          */
-        createSign: async function(callback, storeUser, storeName, storeMaxAllowed, signSubjectName, data, params) {
+        createSign: async function(callback, signSubjectName, data, params) {
             if (!params) {
                 params = {};
             }
@@ -166,7 +170,7 @@
             
             // Ищем подпись
             var oStore = await cadesplugin.CreateObjectAsync("CAdESCOM.Store");
-            oStore.Open(storeUser, storeName, storeMaxAllowed);
+            await oStore.Open(params.storeUser, params.storeName, params.storeMaxAllowed);
             var oCertificates = await oStore.Certificates;
             var oCertFined = await oCertificates.Find(cadesplugin.CAPICOM_CERTIFICATE_FIND_SUBJECT_NAME, signSubjectName);
             if (await oCertFined.Count == 0) {
@@ -180,7 +184,7 @@
             // Создаем объект CAdESCOM.CPSigner
             var oSigner = await cadesplugin.CreateObjectAsync("CAdESCOM.CPSigner");
             await oSigner.propset_Certificate(oCertificate);
-            //await oSigner.propset_TSAAddress("http://cryptopro.ru/tsp/");
+            await oSigner.propset_TSAAddress("http://cryptopro.ru/tsp/");
 
             // Создаем объект CAdESCOM.CadesSignedData
             var oSignedData = await cadesplugin.CreateObjectAsync("CAdESCOM.CadesSignedData");
@@ -205,8 +209,8 @@
             // Вычисляем значение подписи, подпись будет перекодирована в BASE64
             var sSignedMessage;
             try {
-            	await oSigner.propset_Options(1); //CAPICOM_CERTIFICATE_INCLUDE_WHOLE_CHAIN
-                sSignedMessage = await oSignedData.SignCades(oSigner, cadesplugin.CADESCOM_CADES_X_LONG_TYPE_1, true, cadesplugin.CADESCOM_ENCODE_BASE64);
+            	await oSigner.propset_Options(cadesplugin.CAPICOM_CERTIFICATE_INCLUDE_WHOLE_CHAIN); //Сохраняет полную цепочку.
+            	sSignedMessage = await oSignedData.SignCades(oSigner, params.signType, true, cadesplugin.CADESCOM_ENCODE_BASE64);
             } catch (e) {
             	sSignedMessage = "Failed to create signature. Error: " + cadesplugin.getLastError(e);
             }
