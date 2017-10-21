@@ -173,10 +173,11 @@
             await oStore.Open(params.storeUser, params.storeName, params.storeMaxAllowed);
             var oCertificates = await oStore.Certificates;
             var oCertFined = await oCertificates.Find(cadesplugin.CAPICOM_CERTIFICATE_FIND_SHA1_HASH, certThumbprint);
-            if (await oCertFined.Count == 0) {
+            var oCertFinedCount = await oCertFined.Count;
+            if (oCertFinedCount == 0) {
             	callCallBack(callback, ["Не удалось найти сертификат с названием " + certThumbprint]);
             	return;
-            } else if (await oCertificates.Count > 1) {
+            } else if (oCertFinedCount > 1) {
             	callCallBack(callback, ["Не уникальное название сертификата " + certThumbprint]);
             	return;
             }
