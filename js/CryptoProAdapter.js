@@ -768,7 +768,7 @@ if(!!window.Promise) {
     //~ Constrction -----------------------------------------------------------------------------------------
     construction = function() {
         //Нужно проверить совместимость с версией утилит
-        if (!main || main.utils.varsionMajor != 1) {
+        if (!window.main || main.utils.varsionMajor != 1) {
             variable.error = {code: 601, message: "Не поддерживается данная версия классса утилит"};
             throw new Error(variable.error.message);
         }
