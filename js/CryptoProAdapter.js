@@ -714,7 +714,7 @@
 //-----------------~ CryptoProAdapter v 1.0 ~----------------------------------------------------------------
 if(!!window.Promise) {
     cadesplugin.then(function () {
-        if (cryptoProAdapter) {
+        if (window.cryptoProAdapter) {
             cryptoProAdapter.ready();
         } else {
             throw new Error("Ошибка инициализации CryptoProAdapter");
@@ -726,7 +726,7 @@ if(!!window.Promise) {
 } else {
     window.addEventListener("message", function (event){
         if (event.data == "cadesplugin_loaded") {
-            if (cryptoProAdapter) {
+            if (window.cryptoProAdapter) {
                 cryptoProAdapter.ready();
             } else {
                 throw new Error("Ошибка инициализации CryptoProAdapter");
