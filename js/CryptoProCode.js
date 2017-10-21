@@ -165,7 +165,7 @@
         /**
          * Создаем подпись данных
          */
-        createSign: function(callback, signSubjectName, data, params) {
+        createSign: function(callback, certThumbprint, data, params) {
             if (!params) {
                 params = {};
             }
@@ -176,11 +176,11 @@
             // Ищем подпись
             var oStore = cadesplugin.CreateObject("CAdESCOM.Store");
             oStore.Open(params.storeUser, params.storeName, params.storeMaxAllowed);
-            var oCertificates = oStore.Certificates.Find(cadesplugin.CAPICOM_CERTIFICATE_FIND_SUBJECT_NAME, signSubjectName);
+            var oCertificates = oStore.Certificates.Find(cadesplugin.CAPICOM_CERTIFICATE_FIND_SHA1_HASH, certThumbprint);
             if (oCertificates.Count == 0) {
-            	callCallBack(callback, ["Не удалось найти сертификат с названием " + signSubjectName]);
+            	callCallBack(callback, ["Не удалось найти сертификат с названием " + certThumbprint]);
             } else if (oCertificates.Count > 1) {
-            	callCallBack(callback, ["Не уникальное название сертификата " + signSubjectName]);
+            	callCallBack(callback, ["Не уникальное название сертификата " + certThumbprint]);
             }
             var oCertificate = oCertificates.Item(1);
             

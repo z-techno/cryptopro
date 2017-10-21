@@ -160,7 +160,7 @@
         /**
          * Создаем подпись данных
          */
-        createSign: async function(callback, signSubjectName, data, params) {
+        createSign: async function(callback, certThumbprint, data, params) {
             if (!params) {
                 params = {};
             }
@@ -172,11 +172,11 @@
             var oStore = await cadesplugin.CreateObjectAsync("CAdESCOM.Store");
             await oStore.Open(params.storeUser, params.storeName, params.storeMaxAllowed);
             var oCertificates = await oStore.Certificates;
-            var oCertFined = await oCertificates.Find(cadesplugin.CAPICOM_CERTIFICATE_FIND_SUBJECT_NAME, signSubjectName);
+            var oCertFined = await oCertificates.Find(cadesplugin.CAPICOM_CERTIFICATE_FIND_SHA1_HASH, certThumbprint);
             if (await oCertFined.Count == 0) {
-            	callCallBack(callback, ["Не удалось найти сертификат с названием " + signSubjectName]);
+            	callCallBack(callback, ["Не удалось найти сертификат с названием " + certThumbprint]);
             } else if (await oCertificates.Count > 1) {
-            	callCallBack(callback, ["Не уникальное название сертификата " + signSubjectName]);
+            	callCallBack(callback, ["Не уникальное название сертификата " + certThumbprint]);
             }
             var oCertificate = await oCertificates.Item(1);
             

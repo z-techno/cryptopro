@@ -1058,17 +1058,20 @@ if(!!window.Promise) {
             }
 
             var validateErrorCode = 101;
-            var sign = cryptoProAdapter.getCertById(certId);
-            if (!sign.privateKey) {
+            var cert = cryptoProAdapter.getCertById(certId);
+            if (!cert.privateKey) {
             	callbackError(callback, "У сертификата нет приватной части", validateErrorCode);
+            	return undefined;
             }
-            if (!sign.privateKey.valid == false) {
-            	callbackError(callback, "Сертификат не корректен", validateErrorCode);
+            if (cert.privateKey.valid == false) {
+            	callbackError(callback, "Сертификат некорректен", validateErrorCode);
+            	return undefined;
             }
             
             var dateNow = new Date();
-            if (!(dateNow < sign.publicKey.validToDate)) {
+            if (!(dateNow < cert.publicKey.validToDate)) {
             	callbackError(callback, "Срок действия сертификата закончился", validateErrorCode);
+            	return undefined;
             }
             
             callback(true);
@@ -1101,9 +1104,6 @@ if(!!window.Promise) {
             
             if (variable.impl.createSign instanceof Function) {
             	try {
-            		var certSubjectName = cryptoProAdapter.getCertById(certId).publicKey.subjectName;
-            		certSubjectName = certSubjectName.replace("CN=", "");
-            		
             		var params = {
             				signType: cadesplugin.CADESCOM_CADES_DEFAULT,
             				isAddTimeStamp: true, 
@@ -1117,7 +1117,7 @@ if(!!window.Promise) {
             		}
                 	variable.impl.createSign(
                 			callback, 
-                			certSubjectName, 
+                			certId, 
                 			text, 
                 			params
                 	);
@@ -1156,9 +1156,6 @@ if(!!window.Promise) {
             }
             if (variable.impl.createSign instanceof Function) {
             	try {
-            		var certSubjectName = cryptoProAdapter.getCertById(certId).publicKey.subjectName;
-            		certSubjectName = certSubjectName.replace("CN=", "");
-            		
             		var params = {
             				signType: cadesplugin.CADESCOM_CADES_DEFAULT,
             				isAddTimeStamp: true, 
@@ -1172,7 +1169,7 @@ if(!!window.Promise) {
             		}
                 	variable.impl.createSign(
                 			callback, 
-                			certSubjectName, 
+                			certId, 
                 			data, 
                 			params
                 	);
@@ -1191,7 +1188,7 @@ if(!!window.Promise) {
         	if (!certDirty.SerialNumber) {
         		throw new Error("Плагин вернул подпись без номер: " + JSON.stringify(certDirty));
         	}
-        	certConteiner.id = certDirty.SerialNumber;
+        	certConteiner.id = certDirty.Thumbprint;
         	certConteiner.publicKey.serialNumber = certDirty.SerialNumber;
         	certConteiner.publicKey.thumbprint = certDirty.Thumbprint;
         	certConteiner.publicKey.version = certDirty.Version;
