@@ -989,7 +989,7 @@ if(!!window.Promise) {
         		throw new Error("Еще не был загружен список сертификатов");
         	}
         	for (var i = 0; i < variable.certs.length; i++) {
-				if (sid = variable.certs[i].id) {
+				if (sid == variable.certs[i].id) {
 					return variable.certs[i];
 				}
 			}
