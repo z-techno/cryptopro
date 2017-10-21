@@ -1189,6 +1189,8 @@ if(!!window.Promise) {
         		throw new Error("Плагин вернул подпись без номер: " + JSON.stringify(certDirty));
         	}
         	certConteiner.id = certDirty.Thumbprint;
+        	certConteiner.publicKey.issuerName = certDirty.IssuerName;
+        	certConteiner.publicKey.subjectName = certDirty.SubjectName;
         	certConteiner.publicKey.serialNumber = certDirty.SerialNumber;
         	certConteiner.publicKey.thumbprint = certDirty.Thumbprint;
         	certConteiner.publicKey.version = certDirty.Version;
@@ -1226,10 +1228,27 @@ if(!!window.Promise) {
         	};
         	certConteiner.privateKey.valid = certDirty.IsValid;
         	
-        	//
-        	certConteiner.publicKey.issuerName = certDirty.IssuerName;
-        	certConteiner.name = certDirty.SubjectName;
-        	certConteiner.publicKey.subjectName = certDirty.SubjectName;
+        	// Разбираем SubjectName
+        	var owner = {};
+        	var certInfoLine = certDirty.SubjectName.split(",");
+     		for (var j = 0; certInfoLine.length > j; j++) {
+     			var map = certInfoLine[j].split("=");
+     			if (map.length > 1 && map[0] && map[1]) {
+     				if (map[0].trim() == 'T') {
+     					owner.position = map[1].trim();
+     				} else if (map[0].trim() == 'CN') {
+     					owner.name = map[1].trim();
+     				} else if (map[0].trim() == 'L') {
+     					owner.city = map[1].trim();
+     				} else if (map[0].trim() == 'O'){
+     					owner.organization = map[1].trim();
+     				} else {
+     					owner[map[0].trim()] = map[1].trim();
+     				}
+     			}
+     		}
+        	certConteiner.name = owner.name +("position" in owner ? " (" + owner.position + ")" : "");
+        	certConteiner.publicKey.owner = owner;
         	
         	return certConteiner;
         }
