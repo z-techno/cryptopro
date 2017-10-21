@@ -1240,8 +1240,14 @@ if(!!window.Promise) {
      					owner.name = map[1].trim();
      				} else if (map[0].trim() == 'L') {
      					owner.city = map[1].trim();
-     				} else if (map[0].trim() == 'O'){
+     				} else if (map[0].trim() == 'O' || map[0].trim() == 'OU') {
      					owner.organization = map[1].trim();
+     				} else if (map[0].trim() == 'S'){
+     					owner.region = map[1].trim();
+     				} else if (map[0].trim() == 'E'){
+     					owner.email = map[1].trim();
+     				} else if (map[0].trim() == 'C'){
+     					owner.country = map[1].trim();
      				} else {
      					owner[map[0].trim()] = map[1].trim();
      				}
