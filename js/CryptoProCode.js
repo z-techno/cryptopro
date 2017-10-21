@@ -179,8 +179,10 @@
             var oCertificates = oStore.Certificates.Find(cadesplugin.CAPICOM_CERTIFICATE_FIND_SHA1_HASH, certThumbprint);
             if (oCertificates.Count == 0) {
             	callCallBack(callback, ["Не удалось найти сертификат с названием " + certThumbprint]);
+            	return;
             } else if (oCertificates.Count > 1) {
             	callCallBack(callback, ["Не уникальное название сертификата " + certThumbprint]);
+            	return;
             }
             var oCertificate = oCertificates.Item(1);
             
