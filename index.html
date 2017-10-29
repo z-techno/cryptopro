@@ -86,25 +86,25 @@
 						try {
 							cryptoProAdapter.signString(sid, "hello world", function(response) {
 								if (response.error) {
-									cnt.innerHTML = cnt.innerHTML + "Ошибка - signString 'hello world' CADESCOM_CADES_X_LONG_TYPE_1 sign type for TEST TSA: " + JSON.stringify(response.error) + "<br/>";
+									cnt.innerHTML = cnt.innerHTML + "Ошибка - signString 'hello world' CADESCOM_CADES_X_LONG_TYPE_1 sign type: " + JSON.stringify(response.error) + "<br/>";
 								} else {
-									cnt.innerHTML = cnt.innerHTML + "signString 'hello world' CADESCOM_CADES_X_LONG_TYPE_1 sign type for TEST TSA: <hr/>" + response + "<hr/><br/>";
+									cnt.innerHTML = cnt.innerHTML + "signString 'hello world' CADESCOM_CADES_X_LONG_TYPE_1 sign type: <hr/>" + response + "<hr/><br/>";
 								}
 							}, cadesplugin.CADESCOM_CADES_X_LONG_TYPE_1);
 						} catch (e) {
-							cnt.innerHTML = cnt.innerHTML + "Ошибка - signString CADESCOM_CADES_X_LONG_TYPE_1 sign type for TEST TSA: " + e + "<br/>";
+							cnt.innerHTML = cnt.innerHTML + "Ошибка - signString CADESCOM_CADES_X_LONG_TYPE_1 sign type: " + e + "<br/>";
 						}
 						
 						try {
 							cryptoProAdapter.signData(sid, "aGVsbG8gd29ybGQ=", function(response) {
 								if (response.error) {
-									cnt.innerHTML = cnt.innerHTML + "Ошибка - signData 'hello world' CADESCOM_CADES_X_LONG_TYPE_1 sign type for TEST TSA: " + JSON.stringify(response.error) + "<br/>";
+									cnt.innerHTML = cnt.innerHTML + "Ошибка - signData 'hello world' CADESCOM_CADES_X_LONG_TYPE_1 sign type: " + JSON.stringify(response.error) + "<br/>";
 								} else {
-									cnt.innerHTML = cnt.innerHTML + "signData 'hello world' CADESCOM_CADES_X_LONG_TYPE_1 sign type for TEST TSA: <hr/>" + response + "<hr/><br/>";
+									cnt.innerHTML = cnt.innerHTML + "signData 'hello world' CADESCOM_CADES_X_LONG_TYPE_1 sign type: <hr/>" + response + "<hr/><br/>";
 								}
 							}, cadesplugin.CADESCOM_CADES_X_LONG_TYPE_1);
 						} catch (e) {
-							cnt.innerHTML = cnt.innerHTML + "Ошибка - signData CADESCOM_CADES_X_LONG_TYPE_1 sign type for TEST TSA: " + e + "<br/>";
+							cnt.innerHTML = cnt.innerHTML + "Ошибка - signData CADESCOM_CADES_X_LONG_TYPE_1 sign type: " + e + "<br/>";
 						}
 						
 						try {

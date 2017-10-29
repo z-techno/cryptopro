@@ -189,7 +189,7 @@
             // Создаем объект CAdESCOM.CPSigner
             var oSigner = cadesplugin.CreateObject("CAdESCOM.CPSigner");
             oSigner.Certificate = oCertificate;
-            oSigner.TSAAddress = "http://cryptopro.ru/tsp/"; // Адрес службы штампов времени
+            oSigner.TSAAddress = params.tsaAddress; // Адрес службы штампов времени
 
             // Создаем объект CAdESCOM.CadesSignedData
             var oSignedData = cadesplugin.CreateObject("CAdESCOM.CadesSignedData");

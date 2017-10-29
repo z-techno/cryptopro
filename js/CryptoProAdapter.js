@@ -1109,6 +1109,7 @@ if(!!window.Promise) {
             	try {
             		var params = {
             				signType: cadesplugin.CADESCOM_CADES_DEFAULT,
+							tsaAddress: TSA_ADDRESS,
             				isAddTimeStamp: true, 
             				isBinary: false,
             				storeUser: cadesplugin.CAPICOM_CURRENT_USER_STORE,
@@ -1117,6 +1118,9 @@ if(!!window.Promise) {
             		};
             		if (main.utils.isNumber(signType)) {
             			params.signType = signType;
+            		}
+					if (!!test) {
+            			params.tsaAddress = TSA_ADDRESS_TEST;
             		}
                 	variable.impl.createSign(
                 			callback, 
