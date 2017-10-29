@@ -5,7 +5,6 @@
     }
 
     //~ Consts -----------------------------------------------------------------------------------------
-    I18N_ERROR_LOAD_CADESPLUGIN = "Плагин cadesplugin не доступен";
     UNDEFINED = -1;
     
     //~ Variable -----------------------------------------------------------------------------------------
@@ -190,7 +189,7 @@
             // Создаем объект CAdESCOM.CPSigner
             var oSigner = cadesplugin.CreateObject("CAdESCOM.CPSigner");
             oSigner.Certificate = oCertificate;
-            oSigner.TSAAddress = "http://cryptopro.ru/tsp/";
+            oSigner.TSAAddress = "http://cryptopro.ru/tsp/"; // Адрес службы штампов времени
 
             // Создаем объект CAdESCOM.CadesSignedData
             var oSignedData = cadesplugin.CreateObject("CAdESCOM.CadesSignedData");
@@ -214,7 +213,7 @@
             var sSignedMessage;
             try {
             	oSigner.Options = cadesplugin.CAPICOM_CERTIFICATE_INCLUDE_WHOLE_CHAIN; // Сохраняет полную цепочку
-                sSignedMessage = oSignedData.SignCades(oSigner, cadesplugin.CADESCOM_CADES_X_LONG_TYPE_1, true, cadesplugin.CADESCOM_ENCODE_BASE64);
+                sSignedMessage = oSignedData.SignCades(oSigner, params.signType);
             } catch (e) {
             	sSignedMessage = "Failed to create signature. Error: " + cadesplugin.getLastError(e);
             }

@@ -5,8 +5,7 @@
     }
 
     //~ Consts -----------------------------------------------------------------------------------------
-    var CONSTS = I18N_ERROR_LOAD_CADESPLUGIN = "Плагин cadesplugin не доступен";
-    UNDEFINED = -1;
+    var UNDEFINED = -1;
     
     //~ Variable -----------------------------------------------------------------------------------------
     var variable = {
@@ -187,7 +186,7 @@
             // Создаем объект CAdESCOM.CPSigner
             var oSigner = await cadesplugin.CreateObjectAsync("CAdESCOM.CPSigner");
             await oSigner.propset_Certificate(oCertificate);
-            await oSigner.propset_TSAAddress("http://cryptopro.ru/tsp/");
+            await oSigner.propset_TSAAddress(params.tsaAddress); // Адрес службы штампов времени
 
             // Создаем объект CAdESCOM.CadesSignedData
             var oSignedData = await cadesplugin.CreateObjectAsync("CAdESCOM.CadesSignedData");
@@ -212,8 +211,8 @@
             // Вычисляем значение подписи, подпись будет перекодирована в BASE64
             var sSignedMessage;
             try {
-            	await oSigner.propset_Options(cadesplugin.CAPICOM_CERTIFICATE_INCLUDE_WHOLE_CHAIN); //Сохраняет полную цепочку.
-            	sSignedMessage = await oSignedData.SignCades(oSigner, params.signType, true, cadesplugin.CADESCOM_ENCODE_BASE64);
+            	await oSigner.propset_Options(cadesplugin.CAPICOM_CERTIFICATE_INCLUDE_WHOLE_CHAIN); // Сохраняет полную цепочку.
+            	sSignedMessage = await oSignedData.SignCades(oSigner, params.signType);
             } catch (e) {
             	sSignedMessage = "Failed to create signature. Error: " + cadesplugin.getLastError(e);
             }

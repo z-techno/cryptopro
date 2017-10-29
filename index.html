@@ -60,11 +60,11 @@
 						}
 						
 						try {
-							cryptoProAdapter.signString(sid, "test text", function(response) {
+							cryptoProAdapter.signString(sid, "hello world", function(response) {
 								if (response.error) {
-									cnt.innerHTML = cnt.innerHTML + "Ошибка - signString default sign type: " + JSON.stringify(response.error) + "<br/>";
+									cnt.innerHTML = cnt.innerHTML + "Ошибка - signString 'hello world' default sign type: " + JSON.stringify(response.error) + "<br/>";
 								} else {
-									cnt.innerHTML = cnt.innerHTML + "signString default sign type: <hr/>" + response + "<hr/><br/>";
+									cnt.innerHTML = cnt.innerHTML + "signString 'hello world' default sign type: <hr/>" + response + "<hr/><br/>";
 								}
 							});
 						} catch (e) {
@@ -72,11 +72,11 @@
 						}
 						
 						try {
-							cryptoProAdapter.signData(sid, "test text", function(response) {
+							cryptoProAdapter.signData(sid, "aGVsbG8gd29ybGQ=", function(response) {
 								if (response.error) {
-									cnt.innerHTML = cnt.innerHTML + "Ошибка - signData default sign type: " + JSON.stringify(response.error) + "<br/>";
+									cnt.innerHTML = cnt.innerHTML + "Ошибка - signData 'hello world' default sign type: " + JSON.stringify(response.error) + "<br/>";
 								} else {
-									cnt.innerHTML = cnt.innerHTML + "signData default sign type: <hr/>" + response + "<hr/><br/>";
+									cnt.innerHTML = cnt.innerHTML + "signData 'hello world' default sign type: <hr/>" + response + "<hr/><br/>";
 								}
 							});
 						} catch (e) {
@@ -84,27 +84,51 @@
 						}
 						
 						try {
-							cryptoProAdapter.signString(sid, "test text", function(response) {
+							cryptoProAdapter.signString(sid, "hello world", function(response) {
 								if (response.error) {
-									cnt.innerHTML = cnt.innerHTML + "Ошибка - signString CADES_BES sign type: " + JSON.stringify(response.error) + "<br/>";
+									cnt.innerHTML = cnt.innerHTML + "Ошибка - signString 'hello world' CADESCOM_CADES_X_LONG_TYPE_1 sign type for TEST TSA: " + JSON.stringify(response.error) + "<br/>";
 								} else {
-									cnt.innerHTML = cnt.innerHTML + "signString CADES_BES sign type: <hr/>" + response + "<hr/><br/>";
+									cnt.innerHTML = cnt.innerHTML + "signString 'hello world' CADESCOM_CADES_X_LONG_TYPE_1 sign type for TEST TSA: <hr/>" + response + "<hr/><br/>";
 								}
-							}, cadesplugin.CADESCOM_CADES_BES);
+							}, cadesplugin.CADESCOM_CADES_X_LONG_TYPE_1);
 						} catch (e) {
-							cnt.innerHTML = cnt.innerHTML + "Ошибка - signString CADES_BES sign type: " + e + "<br/>";
+							cnt.innerHTML = cnt.innerHTML + "Ошибка - signString CADESCOM_CADES_X_LONG_TYPE_1 sign type for TEST TSA: " + e + "<br/>";
 						}
 						
 						try {
-							cryptoProAdapter.signData(sid, "test text", function(response) {
+							cryptoProAdapter.signData(sid, "aGVsbG8gd29ybGQ=", function(response) {
 								if (response.error) {
-									cnt.innerHTML = cnt.innerHTML + "Ошибка - signData CADES_BES sign type: " + JSON.stringify(response.error) + "<br/>";
+									cnt.innerHTML = cnt.innerHTML + "Ошибка - signData 'hello world' CADESCOM_CADES_X_LONG_TYPE_1 sign type for TEST TSA: " + JSON.stringify(response.error) + "<br/>";
 								} else {
-									cnt.innerHTML = cnt.innerHTML + "signData CADES_BES sign type: <hr/>" + response + "<hr/><br/>";
+									cnt.innerHTML = cnt.innerHTML + "signData 'hello world' CADESCOM_CADES_X_LONG_TYPE_1 sign type for TEST TSA: <hr/>" + response + "<hr/><br/>";
 								}
-							}, cadesplugin.CADESCOM_CADES_BES);
+							}, cadesplugin.CADESCOM_CADES_X_LONG_TYPE_1);
 						} catch (e) {
-							cnt.innerHTML = cnt.innerHTML + "Ошибка - signData CADES_BES sign type: " + e + "<br/>";
+							cnt.innerHTML = cnt.innerHTML + "Ошибка - signData CADESCOM_CADES_X_LONG_TYPE_1 sign type for TEST TSA: " + e + "<br/>";
+						}
+						
+						try {
+							cryptoProAdapter.signString(sid, "hello world", function(response) {
+								if (response.error) {
+									cnt.innerHTML = cnt.innerHTML + "Ошибка - signString 'hello world' CADESCOM_CADES_X_LONG_TYPE_1 sign type for TEST TSA: " + JSON.stringify(response.error) + "<br/>";
+								} else {
+									cnt.innerHTML = cnt.innerHTML + "signString 'hello world' CADESCOM_CADES_X_LONG_TYPE_1 sign type for TEST TSA: <hr/>" + response + "<hr/><br/>";
+								}
+							}, cadesplugin.CADESCOM_CADES_X_LONG_TYPE_1, true);
+						} catch (e) {
+							cnt.innerHTML = cnt.innerHTML + "Ошибка - signString CADESCOM_CADES_X_LONG_TYPE_1 sign type for TEST TSA: " + e + "<br/>";
+						}
+						
+						try {
+							cryptoProAdapter.signData(sid, "aGVsbG8gd29ybGQ=", function(response) {
+								if (response.error) {
+									cnt.innerHTML = cnt.innerHTML + "Ошибка - signData 'hello world' CADESCOM_CADES_X_LONG_TYPE_1 sign type for TEST TSA: " + JSON.stringify(response.error) + "<br/>";
+								} else {
+									cnt.innerHTML = cnt.innerHTML + "signData 'hello world' CADESCOM_CADES_X_LONG_TYPE_1 sign type for TEST TSA: <hr/>" + response + "<hr/><br/>";
+								}
+							}, cadesplugin.CADESCOM_CADES_X_LONG_TYPE_1, true);
+						} catch (e) {
+							cnt.innerHTML = cnt.innerHTML + "Ошибка - signData CADESCOM_CADES_X_LONG_TYPE_1 sign type for TEST TSA: " + e + "<br/>";
 						}
 					});
 				} catch (e) {

@@ -747,10 +747,12 @@ if(!!window.Promise) {
     var _this = this;
 
     //~ Consts ----------------------------------------------------------------------------------------------
-    I18N_ERROR_LOAD_CADESPLUGIN = "Плагин cadesplugin не доступен";
-    I18N_ERROR_LOAD_IMPL = "Реализация еще не доступна";
-    UNDEFINED = -1;
-    BUILD = 1;
+    var I18N_ERROR_LOAD_CADESPLUGIN = "Плагин cadesplugin не доступен";
+    var I18N_ERROR_LOAD_IMPL = "Реализация еще не доступна";
+    var TSA_ADDRESS = "http://cryptopro.ru/tsp/";
+    var TSA_ADDRESS_TEST = "http://testca.cryptopro.ru/tsp/tsp.srf";
+    var UNDEFINED = -1;
+    var BUILD = 2;
     
     //~ Variable --------------------------------------------------------------------------------------------
     var variable = {
@@ -1084,6 +1086,7 @@ if(!!window.Promise) {
          * @param text - подписываемый текст
          * @param callback - Ф-ция ответа, с одним входным параметром в видк строки с подписью в формате BASE64
          * @param signType - тип подписи
+         * @param test - Использовать тестовую службу штампов времени
          * 
          * Типы подписи
          *            CADESCOM_CADES_DEFAULT - Тип подписи по умолчанию (CAdES-X Long Type 1)
@@ -1092,7 +1095,7 @@ if(!!window.Promise) {
          *            CADESCOM_CADES_X_LONG_TYPE_1 - Тип подписи CAdES-X Long Type 1
          * 
          */
-        signString: function(certId, text, callback, signType) {
+        signString: function(certId, text, callback, signType, test) {
             if (variable.debug) {
                 console.log("CryptoProAdapter: Вызыван signString");
             }
@@ -1137,6 +1140,7 @@ if(!!window.Promise) {
          * @param data - Бинарные данные в формате BASE64
          * @param callback - Ф-ция ответа, с одним входным параметром в видк строки с подписью в формате BASE64
          * @param signType - тип подписи
+         * @param test - Использовать тестовую службу штампов времени
          * 
          * Типы подписи
          *            CADESCOM_CADES_DEFAULT - Тип подписи по умолчанию (CAdES-X Long Type 1)
@@ -1145,7 +1149,7 @@ if(!!window.Promise) {
          *            CADESCOM_CADES_X_LONG_TYPE_1 - Тип подписи CAdES-X Long Type 1
          * 
          */
-        signData: function(certId, data, callback, signType) {
+        signData: function(certId, data, callback, signType, test) {
             if (variable.debug) {
                 console.log("CryptoProAdapter: Вызыван signData");
             }
@@ -1158,6 +1162,7 @@ if(!!window.Promise) {
             	try {
             		var params = {
             				signType: cadesplugin.CADESCOM_CADES_DEFAULT,
+            				tsaAddress: TSA_ADDRESS,
             				isAddTimeStamp: true, 
             				isBinary: true,
             				storeUser: cadesplugin.CAPICOM_CURRENT_USER_STORE,
@@ -1166,6 +1171,9 @@ if(!!window.Promise) {
             		};
             		if (main.utils.isNumber(signType)) {
             			params.signType = signType;
+            		}
+            		if (!!test) {
+            			params.tsaAddress = TSA_ADDRESS_TEST;
             		}
                 	variable.impl.createSign(
                 			callback, 
