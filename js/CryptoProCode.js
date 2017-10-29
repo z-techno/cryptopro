@@ -1,11 +1,11 @@
 ﻿;(function () {
     // already loaded
-    if(window.CryptoProCode) {
+    if (window.CryptoProCode) {
         return;
     }
 
     //~ Consts -----------------------------------------------------------------------------------------
-    UNDEFINED = -1;
+    var UNDEFINED = -1;
     
     //~ Variable -----------------------------------------------------------------------------------------
     var variable = {
@@ -17,7 +17,7 @@
     };
     
     //~ Constrction -----------------------------------------------------------------------------------------
-    construction = function() {
+    var construction = function() {
         //Нужно проверить совместимость с версией утилит
         if (!main || main.utils.varsionMajor != 1) {
             variable.error = {code: 601, message: "Не поддерживается данная версия классса утилит"};
@@ -35,6 +35,15 @@
     	if (callback instanceof Function) {
 			callback.call(window, args);
     	}
+    };
+    var callbackError = function(callback, errorMessage, errorCode) {
+    	var error = {
+    			error: {
+    				code: errorCode,
+    				message: errorMessage
+    			}
+    	};
+    	callback.call(window, error);
     };
     
     //~ Public methods --------------------------------------------------------------------------------------
@@ -152,12 +161,19 @@
                         console.log("CryptoProCode: " + JSON.stringify(cert));
                     }
                     certsList.push(cryptoProAdapter.processing(cert));
+                    oStore.Close();
                 } catch (e) {
                     var err = "Ошибка при получении сертификата: " + cryptoProAdapter.handlerException(e);
-                    certsList.push({id: UNDEFINED, name: err});
+                    callbackError(callback, err);
+                    try {
+                    	oStore.Close();
+					} catch (e) {
+						// ignore
+					}
+					return;
                 }
             }
-            oStore.Close();
+            
             callCallBack(callback, certsList);
         },
         
@@ -177,10 +193,10 @@
             oStore.Open(params.storeUser, params.storeName, params.storeMaxAllowed);
             var oCertificates = oStore.Certificates.Find(cadesplugin.CAPICOM_CERTIFICATE_FIND_SHA1_HASH, certThumbprint);
             if (oCertificates.Count == 0) {
-            	callCallBack(callback, ["Не удалось найти сертификат с названием " + certThumbprint]);
+            	callbackError(callback, "Не удалось найти сертификат с названием " + certThumbprint);
             	return;
             } else if (oCertificates.Count > 1) {
-            	callCallBack(callback, ["Не уникальное название сертификата " + certThumbprint]);
+            	callbackError(callback, "Не уникальное название сертификата " + certThumbprint);
             	return;
             }
             var oCertificate = oCertificates.Item(1);
@@ -200,24 +216,30 @@
             }
             oSignedData.Content = data;
             
-            if (isAddTimeStamp) {
-            	// Добавление информации о времени создания подписи
-            	var Attribute = cadesplugin.CreateObject("CADESCOM.CPAttribute");
-            	Attribute.Name = cadesplugin.CAPICOM_AUTHENTICATED_ATTRIBUTE_SIGNING_TIME;
-            	var oTimeNow = new Date();
-            	Attribute.Value = main.utils.convert.convertDate(oTimeNow);
-            	oSigner.AuthenticatedAttributes2.Add(Attribute);
-            }
+            try {
+            	if (isAddTimeStamp) {
+            		// Добавление информации о времени создания подписи
+            		var Attribute = cadesplugin.CreateObject("CADESCOM.CPAttribute");
+            		Attribute.Name = cadesplugin.CAPICOM_AUTHENTICATED_ATTRIBUTE_SIGNING_TIME;
+            		var oTimeNow = new Date();
+            		Attribute.Value = main.utils.convert.convertDate(oTimeNow);
+            		oSigner.AuthenticatedAttributes2.Add(Attribute);
+            	}
+			} catch (e) {
+				var err = "Подпись не создана. Ошибка добавления атрибута времени: " + cadesplugin.getLastError(e);
+            	callbackError(callback, err);
+            	return;
+			}
 
             // Вычисляем значение подписи, подпись будет перекодирована в BASE64
-            var sSignedMessage;
             try {
             	oSigner.Options = cadesplugin.CAPICOM_CERTIFICATE_INCLUDE_WHOLE_CHAIN; // Сохраняет полную цепочку
-                sSignedMessage = oSignedData.SignCades(oSigner, params.signType);
+            	var sSignedMessage = oSignedData.SignCades(oSigner, params.signType);
+                callCallBack(callback, [sSignedMessage]);
             } catch (e) {
-            	sSignedMessage = "Failed to create signature. Error: " + cadesplugin.getLastError(e);
+            	var err = "Подпись не создана. Ошибка: " + cadesplugin.getLastError(e);
+            	callbackError(callback, err);
             }
-            callCallBack(callback, [sSignedMessage]);
         }
     };
     

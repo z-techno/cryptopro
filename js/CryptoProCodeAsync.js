@@ -1,6 +1,6 @@
 ﻿;(function () {
     // already loaded
-    if(window.CryptoProCodeAsync) {
+    if (window.CryptoProCodeAsync) {
         return;
     }
 
@@ -17,7 +17,7 @@
     };
     
     //~ Constrction -----------------------------------------------------------------------------------------
-    construction = function() {
+    var construction = function() {
         //Нужно проверить совместимость с версией утилит
         if (!main || main.utils.varsionMajor != 1) {
             variable.error = {code: 601, message: "Не поддерживается данная версия классса утилит"};
@@ -35,6 +35,15 @@
     	if (callback instanceof Function) {
 			callback.call(window, args);
     	}
+    };
+    var callbackError = function(callback, errorMessage, errorCode) {
+    	var error = {
+    			error: {
+    				code: errorCode,
+    				message: errorMessage
+    			}
+    	};
+    	callback.call(window, error);
     };
     
     //~ Public methods --------------------------------------------------------------------------------------
@@ -147,12 +156,19 @@
                         console.log("CryptoProCodeAsync: " + JSON.stringify(cert));
                     }
                     certsList.push(cert);
+                    await oStore.Close();
                 } catch (e) {
                     var err = "Ошибка при получении сертификата: " + cryptoProAdapter.handlerException(e);
-                    certsList.push({id: UNDEFINED, name: err});
+                    callbackError(callback, err);
+                    try {
+                    	await oStore.Close();
+					} catch (e) {
+						// ignore
+					}
+					return;
                 }
             }
-            await oStore.Close();
+            
             callCallBack(callback, certsList);
         },
         
@@ -174,10 +190,10 @@
             var oCertFined = await oCertificates.Find(cadesplugin.CAPICOM_CERTIFICATE_FIND_SHA1_HASH, certThumbprint);
             var oCertFinedCount = await oCertFined.Count;
             if (oCertFinedCount == 0) {
-            	callCallBack(callback, ["Не удалось найти сертификат с названием " + certThumbprint]);
+            	callbackError(callback, "Не удалось найти сертификат с названием " + certThumbprint);
             	return;
             } else if (oCertFinedCount > 1) {
-            	callCallBack(callback, ["Не уникальное название сертификата " + certThumbprint]);
+            	callbackError(callback, "Не уникальное название сертификата " + certThumbprint);
             	return;
             }
             var oCertificate = await oCertificates.Item(1);
@@ -198,25 +214,32 @@
             }
             await oSignedData.propset_Content(data);
             
-            if (isAddTimeStamp) {
-            	// Добавление информации о времени создания подписи
-            	var Attribute = await cadesplugin.CreateObjectAsync("CADESCOM.CPAttribute");
-            	await Attribute.propset_Name(cadesplugin.CAPICOM_AUTHENTICATED_ATTRIBUTE_SIGNING_TIME);
-            	var oTimeNow = new Date();
-            	await Attribute.propset_Value(main.utils.convert.convertDate(oTimeNow));
-            	var authAttr2 = await oSigner.AuthenticatedAttributes2;
-            	await authAttr2.Add(Attribute);
-            }
+            try {
+            	if (isAddTimeStamp) {
+                	// Добавление информации о времени создания подписи
+                	var Attribute = await cadesplugin.CreateObjectAsync("CADESCOM.CPAttribute");
+                	await Attribute.propset_Name(cadesplugin.CAPICOM_AUTHENTICATED_ATTRIBUTE_SIGNING_TIME);
+                	var oTimeNow = new Date();
+                	await Attribute.propset_Value(main.utils.convert.convertDate(oTimeNow));
+                	var authAttr2 = await oSigner.AuthenticatedAttributes2;
+                	await authAttr2.Add(Attribute);
+                }	
+			} catch (e) {
+				var err = "Подпись не создана. Ошибка добавления атрибута времени: " + cadesplugin.getLastError(e);
+            	callbackError(callback, err);
+            	return;
+			}
+            
 
             // Вычисляем значение подписи, подпись будет перекодирована в BASE64
-            var sSignedMessage;
             try {
             	await oSigner.propset_Options(cadesplugin.CAPICOM_CERTIFICATE_INCLUDE_WHOLE_CHAIN); // Сохраняет полную цепочку.
-            	sSignedMessage = await oSignedData.SignCades(oSigner, params.signType);
+            	var sSignedMessage = await oSignedData.SignCades(oSigner, params.signType);
+            	callCallBack(callback, [sSignedMessage]);
             } catch (e) {
-            	sSignedMessage = "Failed to create signature. Error: " + cadesplugin.getLastError(e);
+            	var err = "Подпись не создана. Ошибка: " + cadesplugin.getLastError(e);
+            	callbackError(callback, err);
             }
-            callCallBack(callback, [sSignedMessage]);
         }
     };
     
