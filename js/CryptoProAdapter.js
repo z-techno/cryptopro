@@ -749,7 +749,7 @@ if(!!window.Promise) {
     //~ Consts ----------------------------------------------------------------------------------------------
     var I18N_ERROR_LOAD_CADESPLUGIN = "Плагин cadesplugin не доступен";
     var I18N_ERROR_LOAD_IMPL = "Реализация еще не доступна";
-    var TSA_ADDRESS = "http://cryptopro.ru/tsp/";
+    var TSA_ADDRESS = "http://cryptopro.ru/tsp/tsp.srf";
     var TSA_ADDRESS_TEST = "http://testca.cryptopro.ru/tsp/tsp.srf";
     var UNDEFINED = -1;
     var BUILD = 2;
@@ -764,7 +764,8 @@ if(!!window.Promise) {
         certsLazy: true,					// Отложенная загружка сертификатов
         debug: true,                        // Режим расширенного логирования
         error: undefined,                   // Последняя ошибка
-        queue: []							// Очередь функций на выполнение при готовности плагина
+        queue: [],							// Очередь функций на выполнение при готовности плагина
+        queueBroken: []						// Очередь функций на выполнение если что-то сломалось
     };
     
     //~ Constrction -----------------------------------------------------------------------------------------
@@ -833,33 +834,7 @@ if(!!window.Promise) {
     implLoadError = function() {
     	
     };
-    
-    /**
-     * Логирование сообщения
-     * 
-     * @param message - Сообщение отправляемое в логгер
-     */
-    log = function(message) {
-        console.log("CryptoProAdapter Log: " + message);
-        try {
-            var dump = {proxy: {}, user: {}, message: message};
-            main.utils.copyProperty(this.variable, dump.proxy)
-            dump.user.browsers = navigator.userAgent;
-            dump.user.url = window.location.toString();
-            dump.user.time = (new Date()).getTime();
-            dump = JSON.stringify(dump);
-            $.ajax({
-                  async: true,
-                  url: this.variable.env.loggerURL,
-                  type: "POST",
-                  data: dump,
-                  success: function (data, textStatus) {}
-            });
-        } catch (e) {
-            // ignore
-        }
-    };
-    
+       
     callbackError = function(callback, errorMessage, errorCode) {
     	var error = {
     			error: {
@@ -909,6 +884,19 @@ if(!!window.Promise) {
     
     //~ Public methods --------------------------------------------------------------------------------------
     publicMethod = {
+		/**
+	     * Выполнить когда что-то сломалось
+	     */
+    	brokenEngine: function() {
+    		if (variable.debug) {
+                console.log("CryptoProAdapter: Вызыван ready");
+            }
+	    	if (funct instanceof Function) {
+	    		variable.queueBroken.push(funct);
+	    		return;
+	    	}
+    	},
+    	
 		/**
 	     * Выполнить когда плагин будет готов
 	     */
