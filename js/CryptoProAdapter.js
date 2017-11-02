@@ -751,6 +751,7 @@ if(!!window.Promise) {
     var I18N_ERROR_LOAD_IMPL = "Реализация еще не доступна";
     var TSA_ADDRESS = "http://cryptopro.ru/tsp/tsp.srf";
     var TSA_ADDRESS_TEST = "http://testca.cryptopro.ru/tsp/tsp.srf";
+    var SIGN_TYPE_DEFAULT = cadesplugin.CADESCOM_CADES_BES;
     var UNDEFINED = -1;
     var BUILD = 2;
     
@@ -1081,7 +1082,7 @@ if(!!window.Promise) {
          *            CADESCOM_CADES_BES     - Тип подписи CAdES BES
          *            CADESCOM_CADES_T       - Тип подписи CAdES-T
          *            CADESCOM_CADES_X_LONG_TYPE_1 - Тип подписи CAdES-X Long Type 1
-         * 
+         * @see http://cpdn.cryptopro.ru/?url=/content/cades/requirements.html
          */
         signString: function(certId, text, callback, signType, test) {
             if (variable.debug) {
@@ -1096,7 +1097,7 @@ if(!!window.Promise) {
             if (variable.impl.createSign instanceof Function) {
             	try {
             		var params = {
-            				signType: cadesplugin.CADESCOM_CADES_DEFAULT,
+            				signType: SIGN_TYPE_DEFAULT,
 							tsaAddress: TSA_ADDRESS,
             				isAddTimeStamp: true, 
             				isBinary: false,
@@ -1139,7 +1140,7 @@ if(!!window.Promise) {
          *            CADESCOM_CADES_BES     - Тип подписи CAdES BES
          *            CADESCOM_CADES_T       - Тип подписи CAdES-T
          *            CADESCOM_CADES_X_LONG_TYPE_1 - Тип подписи CAdES-X Long Type 1
-         * 
+         * @see http://cpdn.cryptopro.ru/?url=/content/cades/requirements.html
          */
         signData: function(certId, data, callback, signType, test) {
             if (variable.debug) {
@@ -1153,7 +1154,7 @@ if(!!window.Promise) {
             if (variable.impl.createSign instanceof Function) {
             	try {
             		var params = {
-            				signType: cadesplugin.CADESCOM_CADES_DEFAULT,
+            				signType: SIGN_TYPE_DEFAULT,
             				tsaAddress: TSA_ADDRESS,
             				isAddTimeStamp: true, 
             				isBinary: true,
